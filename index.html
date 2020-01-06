@@ -32,6 +32,13 @@
         .row {
             padding: 10px;
         }
+        #siminfobox {
+            width: 400px;
+            height: 300px;
+            background: #ded;
+            border-radius: 40px;
+            border: 2px solid #22e;
+        }
     </style>
 
 </head>
@@ -42,11 +49,18 @@
         <div class="col-8" id="mapspace">
         </div>
         <div class="col-4" id="controlPanel">
-            <button type="button" class="btn btn-primary" id="regen">RE-GENERATE</button>
-            <p class="lead"> Map generation in your browser - looking forward to more
-                development, simulating prehistoric people living on this random land </p>
-            <p class="lead"> Check out the <a href="http://github.com/Aperocky/prehistoric">source</a></p>
-            <p class="lead"> Special thanks to anuken for sprites </p>
+            <div class="row">
+                <button type="button" class="btn btn-primary" id="regen">RE-GENERATE</button>
+                <p class="lead"> Map generation in your browser - looking forward to more
+                    development, simulating prehistoric people living on this random land </p>
+                <p class="lead"> Check out the <a href="http://github.com/Aperocky/prehistoric">source</a></p>
+                <p class="lead"> Special thanks to anuken for sprites </p>
+            </div>
+            <div class="row" id="siminfo">
+                <p class="lead"> INFORMATION </p>
+                <div id="siminfobox">
+                </div>
+            </div>
         </div>
     </div>
 </div>

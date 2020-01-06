@@ -1,4 +1,4 @@
-type Point = {
+export type Point = {
     x: number;
     y: number;
 }
@@ -90,12 +90,12 @@ export class bfsMap {
 }
 
 enum Terrain {
+    Deep = -1,
     Water = 0,
     Barren = 1,
     Grassland = 2,
     Forest = 3,
     Mountain = 4,
-    Deep = 5,
 }
 
 function rotateMatrix(m: number[][]): number[][] {
@@ -182,3 +182,4 @@ export class TerrainMap {
         }
     }
 }
+
