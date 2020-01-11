@@ -1,14 +1,14 @@
 export const RESOURCE_TYPE = {
-    FOOD: "Food"
+    FOOD: "FOOD"
 }
 
-export const produceMap = {
+export const PRODUCE_MAP = {
     "FARM": farmProduction,
     "FISH": fishProduction,
     "HUNT": gathererProduction,
 };
 
-export const produceType = {
+export const PRODUCE_TYPE = {
     "FARM": RESOURCE_TYPE.FOOD,
     "FISH": RESOURCE_TYPE.FOOD,
     "HUNT": RESOURCE_TYPE.FOOD,
@@ -46,7 +46,7 @@ function gathererProduction(strength: number, terrain: number, buildings) : numb
         3: 1,
     };
     let terrainModifier: number;
-    if (terrain in terrainModifiers) {
+    if (!(terrain in terrainModifiers)) {
         return 0;
     } else {
         terrainModifier = terrainModifiers[terrain];
@@ -66,7 +66,7 @@ function fishProduction(strength: number, terrain: number, buildings) : number {
         0: 1,
     };
     let terrainModifier: number;
-    if (terrain in terrainModifiers) {
+    if (!(terrain in terrainModifiers)) {
         return 0;
     } else {
         terrainModifier = terrainModifiers[terrain];

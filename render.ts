@@ -98,15 +98,18 @@ function unEmphasizePerson() {
     this.scale.set(0.5);
 }
 
+function addInfoFieldP(text) {
+    let pfie = document.createElement("p");
+    pfie.textContent = text;
+    return pfie;
+}
+
 function listPersonAttributes(context) {
     let siminfobox = document.getElementById("siminfobox");
     while (siminfobox.firstChild) { 
         siminfobox.removeChild(siminfobox.firstChild);
     }
-    let pravda = document.createElement("p");
-    pravda.textContent = "Name: " + context.person.name;
-    pravda.className = "lead";
-    siminfobox.appendChild(pravda);
+    siminfobox.appendChild(addInfoFieldP("Name: " + context.name));
 }
 
 function generateContainer(): void {
@@ -139,7 +142,7 @@ function generateContainer(): void {
             let xreal = xbase + horz;
             let yreal = ybase + vert;
             let personSprite = getPeopleSprite("HUNT");
-            personSprite.name = person.name;
+            personSprite.name = persons[i].unique_id;
             personSprite.x = xreal;
             personSprite.y = yreal;
             mapContainer.addChild(personSprite);
