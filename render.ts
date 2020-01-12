@@ -26,7 +26,6 @@ loader.add('grass1', 'assets/blocks/nature/grass1.png')
 loader.onError.add((error) => console.error(error));
 loader.load((loader, resources) => {
     generateContainer();
-    animate();
 });
 
 const simulation = new Simulation();
@@ -91,11 +90,11 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
     sprite.zIndex = 100;
     sprite.buttonMode = true;
     sprite.interactive = true;
-    sprite.scale.set(0.5)
+    sprite.scale.set(0.5);
     sprite
         .on('mouseover', emphasizePerson)
         .on('mouseout', unEmphasizePerson);
-    return sprite
+    return sprite;
 }
 
 function emphasizePerson() {
