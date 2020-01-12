@@ -1,6 +1,6 @@
 import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap } from "../map/informationMap";
-import { Person, TYPE_MAP } from "./person";
+import { Person, TYPE_MAP, PersonUtil } from "./person";
 import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
 
@@ -24,15 +24,30 @@ export class Simulation {
         this.people = {};
         this.geography = this.getNewTerrainMap();
         this.place_people();
+        // Teardown of stateful variables
+        this.effort_map = new ResourceMap(FIXED_MAP_SIZE);
+        this.production_map = new ResourceMap(FIXED_MAP_SIZE);
+        this.draft_map = new ResourceMap(FIXED_MAP_SIZE);
+        this.income_by_people = {};
     }
 
     next_round() {
         console.log("Going to next round");
+        for (let person of Object.values(this.people)) {
+            if (person.type == "MORT") {
+                // RIP
+                console.log(person.name + " has left the world, RIP");
+                delete this.people[person.unique_id];
+            }
+        }
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.geography);
         this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this.production_map, FIXED_MAP_SIZE);
         this.income_by_people = this.harvest();
         this.distribute();
+        this.store_and_consume();
+        this.commence_life();
+        console.log(this.people);
     }
 
     getNewTerrainMap() : number[][] {
@@ -73,10 +88,12 @@ export class Simulation {
                 x: point.x,
                 y: point.y,
                 income: {},
+                deficit: {},
                 store: {},
                 type: "HUNT",
-                name: uuid(),
+                name: PersonUtil.get_random_full_name(),
                 unique_id: uuid(),
+                eventlog: "",
             }
             this.people[person.unique_id] = person;
         }
@@ -103,9 +120,9 @@ export class Simulation {
                 let produce_type = Object.keys(this.production_map.resourceMap[location].resource)[0];
                 let produce_count = Object.values(this.production_map.resourceMap[location].resource)[0];
                 // Total draft strength in this location
-                let total_draft_strength = Object.values(draft_information).reduce((a,b) => a+b, 0); 
+                let total_draft_strength = Object.values(draft_information).reduce((a,b) => a+b, 0);
                 for (let [person_id, draft_strength] of Object.entries(draft_information)) {
-                    let receive_count = draft_strength / total_draft_strength * produce_count;
+                    let receive_count = draft_strength * produce_count / total_draft_strength;
                     if (person_id in harvest_result) {
                         if (produce_type in harvest_result[person_id]) {
                             harvest_result[person_id][produce_type] += receive_count;
@@ -125,8 +142,47 @@ export class Simulation {
 
     // SOYUZ !!!
     distribute() {
+        // Clear all previous income by people
+        for (let person of Object.values(this.people)) {
+            person.income = {};
+        }
+        // Current income
         for (let [person_id, income] of Object.entries(this.income_by_people)) {
             this.people[person_id].income = income;
+        }
+    }
+
+    // Store and consume and emit deficits
+    // Dark humor is like food, not everyone gets it.
+    store_and_consume() {
+        for (let person of Object.values(this.people)) {
+            PersonUtil.add_income_to_store(person);
+            PersonUtil.consume(person);
+        }
+    }
+
+    commence_life() {
+        console.log("people count: " + Object.values(this.people).length);
+        for (let person of Object.values(this.people)) {
+            // Movements!
+            if (Object.keys(person.deficit).length > 0) {
+                for (let i = 0; i < PersonUtil.get_travel(person); i++) {
+                    PersonUtil.move_person(person, this.geography);
+                }
+            } else {
+                for (let i = 0; i < PersonUtil.get_home(person); i++) {
+                    PersonUtil.move_person(person, this.geography);
+                }
+            }
+            // Life!
+            PersonUtil.run_change_func(person);
+            if (!(person.type == "MORT")) {
+                let new_person = PersonUtil.run_replicate_func(person);
+                if (new_person) {
+                    console.log("Welcome to the world, " + person.name)
+                    this.people[new_person.unique_id] = new_person;
+                }
+            }
         }
     }
 }

@@ -1,5 +1,4 @@
 **/*.js
 node_modules/
-test.ts
 prehistoric/
 **/*.swp

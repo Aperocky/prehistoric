@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
-import * as mapUtil from "./map/mapUtil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 
+const SPRITE_SIZE = 32;
 const app = new PIXI.Application({
     width: 640, height: 640
 });
@@ -26,12 +26,16 @@ loader.add('grass1', 'assets/blocks/nature/grass1.png')
 loader.onError.add((error) => console.error(error));
 loader.load((loader, resources) => {
     generateContainer();
+    animate();
 });
 
 const simulation = new Simulation();
 const renderer = PIXI.autoDetectRenderer({height: 640, width: 640});
 const mapContainer = new PIXI.Container();
 app.stage.addChild(mapContainer);
+
+// Stateful variables that need to exist outside functions
+let peopleSprites: PIXI.Sprite[];
 
 const textureMap = {
     "-1": ["deepwater"],
@@ -40,6 +44,12 @@ const textureMap = {
     2: ["grass1", "grass2", "grass3"],
     3: ["shrubs1", "shrubs2"],
     4: ["rocks1", "rocks2"],
+}
+
+const display_type = {
+    HUNT: "gatherer",
+    FARM: "farmer",
+    FISH: "fisher",
 }
 
 function getRandomTextureForTerrain(terrain: number): PIXI.Texture {
@@ -76,7 +86,6 @@ const beginTexture = getPeopleTexture(0xff0000);
 function getPeopleSprite(ptype: string): PIXI.Sprite {
     // change after ptype addition.
     let texture = beginTexture;
-
     let sprite = new PIXI.Sprite(texture);
     sprite.anchor.set(0.5);
     sprite.zIndex = 100;
@@ -100,23 +109,25 @@ function unEmphasizePerson() {
 
 function addInfoFieldP(text) {
     let pfie = document.createElement("p");
-    pfie.textContent = text;
+    let cleantext = text.replace(/(\.\d{2})\d*/, "$1");
+    pfie.textContent = cleantext;
     return pfie;
 }
 
 function listPersonAttributes(context) {
     let siminfobox = document.getElementById("siminfobox");
-    while (siminfobox.firstChild) { 
+    while (siminfobox.firstChild) {
         siminfobox.removeChild(siminfobox.firstChild);
     }
-    siminfobox.appendChild(addInfoFieldP("Name: " + context.name));
+    siminfobox.appendChild(addInfoFieldP("Name: " + simulation.people[context.name].name));
+    siminfobox.appendChild(addInfoFieldP("Occupation: " + display_type[simulation.people[context.name].type]));
+    siminfobox.appendChild(addInfoFieldP("Income: " + JSON.stringify(simulation.people[context.name].income)));
+    siminfobox.appendChild(addInfoFieldP("Storage: " + JSON.stringify(simulation.people[context.name].store)));
 }
 
 function generateContainer(): void {
-    let spriteSize = 32; // Default
     simulation.generate();
     const terrainMap: number[][] = simulation.geography;
-    const mapContainer = new PIXI.Container();
     // Remove all child that currently exist
     for (let i = app.stage.children.length - 1; i >= 0; i--) {
         app.stage.removeChild(app.stage.children[i]);
@@ -126,16 +137,26 @@ function generateContainer(): void {
     for (let i = 0; i < FIXED_MAP_SIZE; i++) {
         for (let j = 0; j < FIXED_MAP_SIZE; j++) {
             const terrainSprite = getSprite(terrainMap[i][j]);
-            terrainSprite.x = i * spriteSize;
-            terrainSprite.y = j * spriteSize;
+            terrainSprite.x = i * SPRITE_SIZE;
+            terrainSprite.y = j * SPRITE_SIZE;
             mapContainer.addChild(terrainSprite);
         }
     }
-    // people
+    // people will be persisted
+    createPeopleSprite();
+    for (let sp of peopleSprites) {
+        mapContainer.addChild(sp);
+    }
+    mapContainer.x = SPRITE_SIZE/2;
+    mapContainer.y = SPRITE_SIZE/2;
+}
+
+function createPeopleSprite(): void {
+    peopleSprites = []; // Clear people for regeneration of the whole map
     for (let [pointstr, persons] of Object.entries(simulation.get_people_for_show())) {
         let point = JSON.parse(pointstr);
-        let xbase: number = point.x * spriteSize + 4 - spriteSize/2;
-        let ybase: number = point.y * spriteSize + 4 - spriteSize/2;
+        let xbase: number = point.x * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
+        let ybase: number = point.y * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
         for (let i = 0; i < persons.length; i++) {
             let horz = (i % 4) * 8;
             let vert = Math.floor(i/4) * 8;
@@ -145,11 +166,21 @@ function generateContainer(): void {
             personSprite.name = persons[i].unique_id;
             personSprite.x = xreal;
             personSprite.y = yreal;
-            mapContainer.addChild(personSprite);
+            peopleSprites.push(personSprite);
         }
     }
-    mapContainer.x = spriteSize/2;
-    mapContainer.y = spriteSize/2;
+}
+
+function runContainer(): void {
+    simulation.next_round();
+    // Remove old sprites
+    for (let sp of peopleSprites) {
+        mapContainer.removeChild(sp);
+    }
+    createPeopleSprite();
+    for (let sp of peopleSprites) {
+        mapContainer.addChild(sp);
+    }
 }
 
 let regenButton = document.getElementById("regen");
@@ -157,7 +188,10 @@ regenButton.addEventListener("click", () => {
     generateContainer();
 });
 
-animate();
+let runTurnButton = document.getElementById("maketurn");
+runTurnButton.addEventListener("click", () => {
+    runContainer();
+});
 
 function animate() {
     renderer.render(mapContainer);
