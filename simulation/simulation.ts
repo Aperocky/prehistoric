@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
 
 export const FIXED_MAP_SIZE = 20;
-const INITIAL_BATCH_SIZE = 5;
+const INITIAL_BATCH_SIZE = 10;
 
 export class Simulation {
     // General
@@ -40,12 +40,13 @@ export class Simulation {
                 delete this.people[person.unique_id];
             }
         }
+        // Move first, so same people in same place create same contributions/ income
+        this.move_people();
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.geography);
         this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this.production_map, FIXED_MAP_SIZE);
         this.income_by_people = this.harvest();
         this.distribute();
-        this.store_and_consume();
         this.commence_life();
         console.log(this.people);
     }
@@ -140,6 +141,34 @@ export class Simulation {
         return harvest_result;
     }
 
+    get_gdp() : { [key: string]: number } {
+        let gdp: { [key: string]: number } = {};
+        for (let income of Object.values(this.income_by_people)) {
+            for (let [rtype, inc] of Object.entries(income)) {
+                if (rtype in gdp) {
+                    gdp[rtype] += inc;
+                } else {
+                    gdp[rtype] = inc;
+                }
+            }
+        }
+        return gdp;
+    }
+
+    move_people() {
+        for (let person of Object.values(this.people)) {
+            if (Object.keys(person.deficit).length > 0) {
+                for (let i = 0; i < PersonUtil.get_travel(person); i++) {
+                    PersonUtil.move_person(person, this.geography);
+                }
+            } else {
+                for (let i = 0; i < PersonUtil.get_home(person); i++) {
+                    PersonUtil.move_person(person, this.geography);
+                }
+            }
+        }
+    }
+
     // SOYUZ !!!
     distribute() {
         // Clear all previous income by people
@@ -152,28 +181,12 @@ export class Simulation {
         }
     }
 
-    // Store and consume and emit deficits
-    // Dark humor is like food, not everyone gets it.
-    store_and_consume() {
-        for (let person of Object.values(this.people)) {
-            PersonUtil.add_income_to_store(person);
-            PersonUtil.consume(person);
-        }
-    }
-
     commence_life() {
         console.log("people count: " + Object.values(this.people).length);
         for (let person of Object.values(this.people)) {
             // Movements!
-            if (Object.keys(person.deficit).length > 0) {
-                for (let i = 0; i < PersonUtil.get_travel(person); i++) {
-                    PersonUtil.move_person(person, this.geography);
-                }
-            } else {
-                for (let i = 0; i < PersonUtil.get_home(person); i++) {
-                    PersonUtil.move_person(person, this.geography);
-                }
-            }
+            PersonUtil.add_income_to_store(person);
+            PersonUtil.consume(person);
             // Life!
             PersonUtil.run_change_func(person);
             if (!(person.type == "MORT")) {

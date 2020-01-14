@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 
 const SPRITE_SIZE = 32;
@@ -8,7 +9,10 @@ const app = new PIXI.Application({
 let gamezone = document.getElementById("mapspace");
 gamezone.appendChild(app.view);
 
-// Load resources
+// ---------------------------------------------------------------------------
+// Load resources for map, initiate persisting variables
+// ---------------------------------------------------------------------------
+
 let loader = new PIXI.Loader();
 loader.add('grass1', 'assets/blocks/nature/grass1.png')
     .add('grass2', 'assets/blocks/nature/grass2.png')
@@ -29,9 +33,9 @@ loader.load((loader, resources) => {
 });
 
 const simulation = new Simulation();
-const renderer = PIXI.autoDetectRenderer({height: 640, width: 640});
 const mapContainer = new PIXI.Container();
 app.stage.addChild(mapContainer);
+const siminfobox = document.getElementById("siminfobox");
 
 // Stateful variables that need to exist outside functions
 let peopleSprites: PIXI.Sprite[];
@@ -49,7 +53,19 @@ const display_type = {
     HUNT: "gatherer",
     FARM: "farmer",
     FISH: "fisher",
+    MORT: "RIP",
 }
+
+const people_color_type = {
+    HUNT: 0x023220,
+    FISH: 0x005e5e,
+    FARM: 0x909050,
+    MORT: 0x666666,
+}
+
+// ---------------------------------------------------------------------------
+// Get Map Sprites for background land/water
+// ---------------------------------------------------------------------------
 
 function getRandomTextureForTerrain(terrain: number): PIXI.Texture {
     let possibleTextures: Array<string> = textureMap[terrain];
@@ -70,21 +86,23 @@ function getSprite(terrain: number, size = 32): PIXI.Sprite {
     return sprite;
 }
 
+// ---------------------------------------------------------------------------
+// Get people representing sprites, different color for types
+// ---------------------------------------------------------------------------
+
 function getPeopleTexture(color: number, radius: number = 4): PIXI.Texture {
     let ra = radius * 2 // Higher resolution
     let graphics = new PIXI.Graphics();
-    graphics.beginFill(color, 0.4);
+    graphics.beginFill(color, 0.7);
     graphics.lineStyle(1, 0xedcc9f, 0.8);
     graphics.drawCircle(ra,ra,ra);
     graphics.endFill();
     return app.renderer.generateTexture(graphics, PIXI.SCALE_MODES.LINEAR, 1);
 }
 
-const beginTexture = getPeopleTexture(0xff0000);
-
 function getPeopleSprite(ptype: string): PIXI.Sprite {
     // change after ptype addition.
-    let texture = beginTexture;
+    let texture = getPeopleTexture(people_color_type[ptype]);
     let sprite = new PIXI.Sprite(texture);
     sprite.anchor.set(0.5);
     sprite.zIndex = 100;
@@ -104,25 +122,52 @@ function emphasizePerson() {
 
 function unEmphasizePerson() {
     this.scale.set(0.5);
+    listGeneralInfo();
 }
 
-function addInfoFieldP(text) {
-    let pfie = document.createElement("p");
-    let cleantext = text.replace(/(\.\d{2})\d*/, "$1");
-    pfie.textContent = cleantext;
-    return pfie;
+function listGeneralInfo() {
+    WebUtil.clearDiv(siminfobox);
+    siminfobox.appendChild(WebUtil.addInfoField("# Click on person to see details..", "#999"));
+    siminfobox.appendChild(WebUtil.addInfoField("TOTAL POPULATION: " + Object.keys(simulation.people).length));
+    siminfobox.appendChild(WebUtil.addInfoField("TOTAL PRODUCTION: " + JSON.stringify(simulation.get_gdp()))); 
 }
 
 function listPersonAttributes(context) {
-    let siminfobox = document.getElementById("siminfobox");
-    while (siminfobox.firstChild) {
-        siminfobox.removeChild(siminfobox.firstChild);
-    }
-    siminfobox.appendChild(addInfoFieldP("Name: " + simulation.people[context.name].name));
-    siminfobox.appendChild(addInfoFieldP("Occupation: " + display_type[simulation.people[context.name].type]));
-    siminfobox.appendChild(addInfoFieldP("Income: " + JSON.stringify(simulation.people[context.name].income)));
-    siminfobox.appendChild(addInfoFieldP("Storage: " + JSON.stringify(simulation.people[context.name].store)));
+    WebUtil.clearDiv(siminfobox);
+    siminfobox.appendChild(WebUtil.addInfoField("Name: " + simulation.people[context.name].name));
+    siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + display_type[simulation.people[context.name].type]));
+    siminfobox.appendChild(WebUtil.addInfoField("Income: " + JSON.stringify(simulation.people[context.name].income)));
+    siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[context.name].store)));
 }
+
+// ---------------------------------------------------------------------------
+// Create people sprite by extracting position from simulation and recreating
+// the sprites. 
+// ---------------------------------------------------------------------------
+
+function createPeopleSprite(): void {
+    peopleSprites = []; // Clear people for regeneration of the whole map
+    for (let [pointstr, persons] of Object.entries(simulation.get_people_for_show())) {
+        let point = JSON.parse(pointstr);
+        let xbase: number = point.x * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
+        let ybase: number = point.y * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
+        for (let i = 0; i < persons.length; i++) {
+            let horz = (i % 4) * 8;
+            let vert = Math.floor(i/4) * 8;
+            let xreal = xbase + horz;
+            let yreal = ybase + vert;
+            let personSprite = getPeopleSprite(persons[i].type);
+            personSprite.name = persons[i].unique_id;
+            personSprite.x = xreal;
+            personSprite.y = yreal;
+            peopleSprites.push(personSprite);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Implement main logic, regenerate whole map/ go to next turn.
+// ---------------------------------------------------------------------------
 
 function generateContainer(): void {
     simulation.generate();
@@ -148,26 +193,7 @@ function generateContainer(): void {
     }
     mapContainer.x = SPRITE_SIZE/2;
     mapContainer.y = SPRITE_SIZE/2;
-}
-
-function createPeopleSprite(): void {
-    peopleSprites = []; // Clear people for regeneration of the whole map
-    for (let [pointstr, persons] of Object.entries(simulation.get_people_for_show())) {
-        let point = JSON.parse(pointstr);
-        let xbase: number = point.x * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
-        let ybase: number = point.y * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
-        for (let i = 0; i < persons.length; i++) {
-            let horz = (i % 4) * 8;
-            let vert = Math.floor(i/4) * 8;
-            let xreal = xbase + horz;
-            let yreal = ybase + vert;
-            let personSprite = getPeopleSprite("HUNT");
-            personSprite.name = persons[i].unique_id;
-            personSprite.x = xreal;
-            personSprite.y = yreal;
-            peopleSprites.push(personSprite);
-        }
-    }
+    WebUtil.startingHelp(siminfobox);
 }
 
 function runContainer(): void {
@@ -180,6 +206,7 @@ function runContainer(): void {
     for (let sp of peopleSprites) {
         mapContainer.addChild(sp);
     }
+    listGeneralInfo();
 }
 
 let regenButton = document.getElementById("regen");
@@ -191,8 +218,3 @@ let runTurnButton = document.getElementById("maketurn");
 runTurnButton.addEventListener("click", () => {
     runContainer();
 });
-
-function animate() {
-    renderer.render(mapContainer);
-    requestAnimationFrame(animate);
-}
