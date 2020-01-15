@@ -2,11 +2,16 @@ import { Point } from "./mapUtil";
 
 type ResourceInformation = {
     resource : { [key: string] : number };
-    building : string;
+}
+
+type LocalInformation = {
+    geography: number;
+    isCoast: boolean;
+    building: string;
 }
 
 function newRI(): ResourceInformation {
-    return { resource: {}, building: "" };
+    return { resource: {}};
 }
 
 export class ResourceMap {
@@ -79,4 +84,38 @@ export class ResourceMap {
         }
         return 0;
     }
+}
+
+export function createMapCache(geography: number[][]) : { [location: string] : LocalInformation } {
+    let result: { [location: string] : LocalInformation } = {};
+    for (let x = 0; x < geography.length; x++) {
+        for (let y = 0; y < geography.length; y++) {
+            let location = ResourceMap.pointToStr(x, y);
+            let terrainType = geography[x][y];
+            let local: LocalInformation = {
+                geography: terrainType,
+                isCoast: false,
+                building: "",
+            }
+            result[location] = local;
+        }
+    }
+    // 2 pass for coast
+    let coastCount = 0;
+    for (let [location, info] of Object.entries(result)) {
+        let point: Point = JSON.parse(location);
+        let north = ResourceMap.pointToStr(point.x, point.y+1);
+        let south = ResourceMap.pointToStr(point.x, point.y-1);
+        let east = ResourceMap.pointToStr(point.x+1, point.y);
+        let west = ResourceMap.pointToStr(point.x-1, point.y);
+        for (let direction of [north, east, west, south]) {
+            if (info.geography > 0 && direction in result && result[direction].geography < 1) {
+                info.isCoast = true;
+                coastCount += 1;
+                break;
+            }
+        }
+    }
+    console.log('COASTAL: ' + coastCount);
+    return result;
 }

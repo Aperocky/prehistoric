@@ -129,7 +129,8 @@ function listGeneralInfo() {
     WebUtil.clearDiv(siminfobox);
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person to see details..", "#999"));
     siminfobox.appendChild(WebUtil.addInfoField("TOTAL POPULATION: " + Object.keys(simulation.people).length));
-    siminfobox.appendChild(WebUtil.addInfoField("TOTAL PRODUCTION: " + JSON.stringify(simulation.get_gdp()))); 
+    siminfobox.appendChild(WebUtil.addInfoField("TOTAL PRODUCTION: " + JSON.stringify(simulation.get_gdp())));
+    siminfobox.appendChild(WebUtil.addInfoField("TOTAL STORAGE: " + JSON.stringify(simulation.get_wealth())));
 }
 
 function listPersonAttributes(context) {
@@ -142,7 +143,7 @@ function listPersonAttributes(context) {
 
 // ---------------------------------------------------------------------------
 // Create people sprite by extracting position from simulation and recreating
-// the sprites. 
+// the sprites.
 // ---------------------------------------------------------------------------
 
 function createPeopleSprite(): void {

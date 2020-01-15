@@ -1,5 +1,5 @@
 import { TerrainMap, Point } from "../map/mapUtil";
-import { ResourceMap } from "../map/informationMap";
+import { ResourceMap, createMapCache } from "../map/informationMap";
 import { Person, TYPE_MAP, PersonUtil } from "./person";
 import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
@@ -10,6 +10,7 @@ const INITIAL_BATCH_SIZE = 10;
 export class Simulation {
     // General
     geography : number[][];
+    map_cache : { [location: string] : object };
     land_tiles : Array<string>;
     people : { [key: string] : Person };
 
@@ -23,6 +24,7 @@ export class Simulation {
         console.log("Refreshing map");
         this.people = {};
         this.geography = this.getNewTerrainMap();
+        this.map_cache = createMapCache(this.geography);
         this.place_people();
         // Teardown of stateful variables
         this.effort_map = new ResourceMap(FIXED_MAP_SIZE);
@@ -90,7 +92,7 @@ export class Simulation {
                 y: point.y,
                 income: {},
                 deficit: {},
-                store: {},
+                store: {FOOD: 1},
                 type: "HUNT",
                 name: PersonUtil.get_random_full_name(),
                 unique_id: uuid(),
@@ -153,6 +155,21 @@ export class Simulation {
             }
         }
         return gdp;
+    }
+
+    get_wealth() : { [key: string]: number } {
+        let wealth: { [key: string]: number } = {};
+        for (let person of Object.values(this.people)) {
+            let storage = person.store;
+            for (let [rtype, store] of Object.entries(storage)) {
+                if (rtype in wealth) {
+                    wealth[rtype] += store;
+                } else {
+                    wealth[rtype] = store;
+                }
+            }
+        }
+        return wealth;
     }
 
     move_people() {
