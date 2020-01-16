@@ -64,6 +64,7 @@ function gathererProduction(strength: number, terrain: number, buildings) : numb
 function fishProduction(strength: number, terrain: number, buildings) : number {
     let terrainModifiers = {
         0: 1,
+        1: 0.5,
     };
     let terrainModifier: number;
     if (!(terrain in terrainModifiers)) {
@@ -72,10 +73,10 @@ function fishProduction(strength: number, terrain: number, buildings) : number {
         terrainModifier = terrainModifiers[terrain];
     }
     let produce: number
-    if (strength < 5){
+    if (strength < 0.7){
         produce = strength;
     } else {
-        produce = 5 + (strength-5)/10; // Overfishing
+        produce = 0.7 - (strength - 1)/20; // Overfishing
     }
     produce *= terrainModifier;
     return roundToCent(produce);

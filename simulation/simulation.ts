@@ -13,8 +13,10 @@ export class Simulation {
     map_cache : { [location: string] : object };
     land_tiles : Array<string>;
     people : { [key: string] : Person };
+    log_queue : string[];
 
     // Turn specifics
+    year : number;
     effort_map : ResourceMap;
     production_map : ResourceMap;
     draft_map : ResourceMap;
@@ -25,12 +27,14 @@ export class Simulation {
         this.people = {};
         this.geography = this.getNewTerrainMap();
         this.map_cache = createMapCache(this.geography);
+        this.year = 0;
         this.place_people();
         // Teardown of stateful variables
         this.effort_map = new ResourceMap(FIXED_MAP_SIZE);
         this.production_map = new ResourceMap(FIXED_MAP_SIZE);
         this.draft_map = new ResourceMap(FIXED_MAP_SIZE);
         this.income_by_people = {};
+        this.log_queue = [];
     }
 
     next_round() {
@@ -39,10 +43,12 @@ export class Simulation {
             if (person.type == "MORT") {
                 // RIP
                 console.log(person.name + " has left the world, RIP");
+                this.log_to_queue(person.name + " has left the world, RIP");
                 delete this.people[person.unique_id];
             }
         }
         // Move first, so same people in same place create same contributions/ income
+        this.year += 1;
         this.move_people();
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.geography);
@@ -50,7 +56,6 @@ export class Simulation {
         this.income_by_people = this.harvest();
         this.distribute();
         this.commence_life();
-        console.log(this.people);
     }
 
     getNewTerrainMap() : number[][] {
@@ -97,22 +102,10 @@ export class Simulation {
                 name: PersonUtil.get_random_full_name(),
                 unique_id: uuid(),
                 eventlog: "",
+                age: 10,
             }
             this.people[person.unique_id] = person;
         }
-    }
-
-    get_people_for_show() : { [key: string] : Array<Person> } {
-        let result = {};
-        for (let person of Object.values(this.people)) {
-            let pointstr = ResourceMap.pointToStr(person.x, person.y);
-            if (pointstr in result) {
-                result[pointstr].push(person);
-            } else {
-                result[pointstr] = [person];
-            }
-        }
-        return result;
     }
 
     harvest() : { [key: string] : { [key: string] : number }} {
@@ -141,6 +134,75 @@ export class Simulation {
             }
         }
         return harvest_result;
+    }
+
+    move_people() {
+        for (let person of Object.values(this.people)) {
+            if (Object.keys(person.deficit).length > 0) {
+                for (let i = 0; i < PersonUtil.get_travel(person); i++) {
+                    PersonUtil.move_person(person, this.map_cache);
+                }
+            } else {
+                for (let i = 0; i < PersonUtil.get_home(person); i++) {
+                    PersonUtil.move_person(person, this.map_cache);
+                }
+            }
+        }
+    }
+
+    // SOYUZ !!!
+    distribute() {
+        // Clear all previous income by people
+        for (let person of Object.values(this.people)) {
+            person.income = {};
+        }
+        // Current income
+        for (let [person_id, income] of Object.entries(this.income_by_people)) {
+            this.people[person_id].income = income;
+        }
+    }
+
+    commence_life() {
+        console.log("people count: " + Object.values(this.people).length);
+        for (let person of Object.values(this.people)) {
+            // Movements!
+            person.age += 1;
+            PersonUtil.add_income_to_store(person);
+            PersonUtil.consume(person);
+            // Life!
+            PersonUtil.run_change_func(person, this.map_cache);
+            if (!(person.type == "MORT")) {
+                let new_person = PersonUtil.run_replicate_func(person);
+                if (new_person) {
+                    this.log_to_queue(person.name + " is born");
+                    this.people[new_person.unique_id] = new_person;
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Above are simulation core functions, below are utility functions
+    // ---------------------------------------------------------------------------
+
+    log_to_queue(log: string) : void {
+        if (this.log_queue.length > 100) {
+            this.log_queue.shift();
+        }
+        this.log_queue.push((4500-this.year) + " BC: " + log);
+    }
+
+    get_people_for_show() : { [key: string] : Array<Person> } {
+        let result = {};
+        for (let person of Object.values(this.people)) {
+            let pointstr = ResourceMap.pointToStr(person.x, person.y);
+            if (pointstr in result) {
+                result[pointstr].push(person);
+            } else {
+                result[pointstr] = [person];
+            }
+        }
+        return result;
     }
 
     get_gdp() : { [key: string]: number } {
@@ -172,48 +234,17 @@ export class Simulation {
         return wealth;
     }
 
-    move_people() {
+    get_composition() {
+        let composition = {};
         for (let person of Object.values(this.people)) {
-            if (Object.keys(person.deficit).length > 0) {
-                for (let i = 0; i < PersonUtil.get_travel(person); i++) {
-                    PersonUtil.move_person(person, this.geography);
-                }
+            let ptype = person.type;
+            if (ptype in composition) {
+                composition[ptype] += 1;
             } else {
-                for (let i = 0; i < PersonUtil.get_home(person); i++) {
-                    PersonUtil.move_person(person, this.geography);
-                }
+                composition[ptype] = 1;
             }
         }
-    }
-
-    // SOYUZ !!!
-    distribute() {
-        // Clear all previous income by people
-        for (let person of Object.values(this.people)) {
-            person.income = {};
-        }
-        // Current income
-        for (let [person_id, income] of Object.entries(this.income_by_people)) {
-            this.people[person_id].income = income;
-        }
-    }
-
-    commence_life() {
-        console.log("people count: " + Object.values(this.people).length);
-        for (let person of Object.values(this.people)) {
-            // Movements!
-            PersonUtil.add_income_to_store(person);
-            PersonUtil.consume(person);
-            // Life!
-            PersonUtil.run_change_func(person);
-            if (!(person.type == "MORT")) {
-                let new_person = PersonUtil.run_replicate_func(person);
-                if (new_person) {
-                    console.log("Welcome to the world, " + person.name)
-                    this.people[new_person.unique_id] = new_person;
-                }
-            }
-        }
+        return composition;
     }
 }
 

@@ -2,6 +2,8 @@ import { RESOURCE_TYPE } from "./resources";
 import * as firstnames from "../assets/data/firstname_f.json";
 import * as surnames from "../assets/data/surnames.json";
 import { v4 as uuid } from 'uuid';
+import { ResourceMap } from "../map/informationMap";
+import { Point } from "../map/mapUtil";
 
 const MORTALITY = "MORT";
 const NO_CHANGE = "STAY";
@@ -16,38 +18,22 @@ export type Person = {
     name: string;
     unique_id: string;
     eventlog: string;
+    age: number;
 }
 
 export class PersonUtil {
 
-    static move_person(person: Person, geography: number[][], rec_num=0): void {
-        // Too bad, you lost a turn
-        let boundary: number = geography.length;
-        if (rec_num > 4) {
-            return;
+    static move_person(person: Person, mapCache): void {
+        let north = ResourceMap.pointToStr(person.x, person.y + 1);
+        let south = ResourceMap.pointToStr(person.x, person.y - 1);
+        let west = ResourceMap.pointToStr(person.x + 1, person.y);
+        let east = ResourceMap.pointToStr(person.x - 1, person.y);
+        let decision: string = [north, east, west, south][Math.floor(Math.random()*4)];
+        if (decision in mapCache && mapCache[decision].geography > 0) {
+            let newloc: Point = JSON.parse(decision);
+            person.x = newloc.x;
+            person.y = newloc.y;
         }
-        let xy: number = Math.floor(Math.random()*2);
-        let dir: number = [-1,1][Math.floor(Math.random()*2)];
-        let pointx: number;
-        let pointy: number;
-        if (xy) {
-            pointx = person.x + dir;
-            pointy = person.y;
-        } else {
-            pointx = person.x;
-            pointy = person.y + dir;
-        }
-        if ( pointx >= boundary || pointx < 0 || pointy >= boundary || pointy < 0) {
-            PersonUtil.move_person(person, geography, rec_num+1);
-            return;
-        }
-        if (geography[pointx][pointy] > 0) {
-            person.x = pointx;
-            person.y = pointy;
-        } else {
-            PersonUtil.move_person(person, geography, rec_num+1);
-        }
-        return;
     }
 
     static add_income_to_store(person: Person): void {
@@ -119,19 +105,23 @@ export class PersonUtil {
         return typedef.consumption;
     }
 
-    static get_max_store(person: Person) {
-        let typedef = PersonUtil.get_type_def(person);
-        return typedef.max_store;
-    }
-
     static get_draft(person: Person) {
         let typedef = PersonUtil.get_type_def(person);
         return typedef.draft;
     }
 
-    static run_change_func(person: Person)  {
+    static run_change_func(person: Person, map_cache) {
         let typedef = PersonUtil.get_type_def(person);
-        let pstatus = typedef.change_func(person);
+        let pstatus = typedef.change_func(person, map_cache);
+        // General change logic independent to types, reserved for MORTALITY
+        // Starvation is bad for health
+        if (Math.random() < person.deficit[RESOURCE_TYPE.FOOD]){
+            pstatus = MORTALITY;
+        }
+        // Ageing
+        if (Math.random() * 60 < person.age - 60) {
+            pstatus = MORTALITY;
+        }
         if (pstatus == NO_CHANGE) {
             return;
         }
@@ -150,6 +140,7 @@ export class PersonUtil {
             name: PersonUtil.get_random_name(false) + " " + surname,
             unique_id: uuid(),
             eventlog: "",
+            age: 0,
         }
         for (let [rtype, rcost] of Object.entries(replicate_cost)) {
             person.store[rtype] -= rcost;
@@ -164,17 +155,15 @@ export class PersonUtil {
     }
 
     static run_replicate_func(person: Person): Person | null {
+        if (person.age < 13 || person.age > 45) {
+            return null;
+        }
         let typedef: PersonType = PersonUtil.get_type_def(person);
         if (typedef.replicate_func(person)) {
             let replicate_cost = typedef.replicate_cost;
             return PersonUtil.create_new_person_from_parent(person, replicate_cost);
         }
         return null;
-    }
-
-    static get_replicate_func(person: Person) {
-        let typedef = PersonUtil.get_type_def(person);
-        return typedef.replicate_func;
     }
 }
 
@@ -187,7 +176,6 @@ type PersonType = {
     draft: { [key: string]: number[] };
     // draft; [RESOURCE_TYPE.FOOD: [radius, strength]];
     consumption: { [key: string]: number };
-    max_store: { [key: string]: number };
     change_func: Function;
     replicate_func: Function;
     replicate_cost: { [key: string]: number };
@@ -195,8 +183,8 @@ type PersonType = {
 
 const fisher: PersonType = {
     type: "FISH",
-    travel: 5,
-    home: 1,
+    travel: 1,
+    home: 0,
     work_strength: 0.3,
     work_radius: 1.5,
     draft: {
@@ -205,17 +193,19 @@ const fisher: PersonType = {
     consumption: {
         FOOD : 0.5
     },
-    max_store: {
-        FOOD : 5
-    },
-    change_func: (deficit) => {
-        if (Math.random() > deficit[RESOURCE_TYPE.FOOD]/1){
-            return MORTALITY;
+    change_func: (person, map_cache) => {
+        let point = ResourceMap.pointToStr(person.x, person.y);
+        if (!map_cache[point].isCoast) {
+            return "HUNT";
+        }
+        // 5% chance to just become hunter because 'Rebellion'
+        if (Math.random() < 0.05) {
+            return "HUNT";
         }
         return NO_CHANGE;
     },
-    replicate_func: (store) => {
-        return (Math.random()+0.25 < store[RESOURCE_TYPE.FOOD]/6)
+    replicate_func: (person) => {
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/6)
     },
     replicate_cost: {
         FOOD : 2
@@ -234,12 +224,12 @@ const hunter: PersonType = {
     consumption: {
         FOOD : 0.5
     },
-    max_store: {
-        FOOD : 5
-    },
-    change_func: (person) => {
-        if (Math.random() > person.deficit[RESOURCE_TYPE.FOOD]/1){
-            return MORTALITY;
+    change_func: (person, map_cache) => {
+        if (Object.keys(person.deficit).length > 0) {
+            let point = ResourceMap.pointToStr(person.x, person.y);
+            if (map_cache[point].isCoast) {
+                return "FISH";
+            }
         }
         return NO_CHANGE;
     },
@@ -263,13 +253,7 @@ const farmer: PersonType = {
     consumption: {
         FOOD : 0.5
     },
-    max_store: {
-        FOOD : 5
-    },
-    change_func: (deficit) => {
-        if (Math.random() > deficit[RESOURCE_TYPE.FOOD]/1){
-            return MORTALITY;
-        }
+    change_func: (person, map_cache) => {
         return NO_CHANGE;
     },
     replicate_func: (store) => {

@@ -1,5 +1,5 @@
 build:
-	@tsc render.ts --resolveJsonModule
+	@tsc render.ts --resolveJsonModule --target es5
 	@browserify render.js -o script.js
 
 test:

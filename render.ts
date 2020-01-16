@@ -1,6 +1,8 @@
 import * as PIXI from "pixi.js";
 import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
+// Buttons
+const logButton = document.getElementById("logbut");
 
 const SPRITE_SIZE = 32;
 const app = new PIXI.Application({
@@ -125,20 +127,34 @@ function unEmphasizePerson() {
     listGeneralInfo();
 }
 
+// ---------------------------------------------------------------------------
+// Display utility functions that uses the existing infrastructure
+// ---------------------------------------------------------------------------
+
 function listGeneralInfo() {
     WebUtil.clearDiv(siminfobox);
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person to see details..", "#999"));
+    siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
     siminfobox.appendChild(WebUtil.addInfoField("TOTAL POPULATION: " + Object.keys(simulation.people).length));
     siminfobox.appendChild(WebUtil.addInfoField("TOTAL PRODUCTION: " + JSON.stringify(simulation.get_gdp())));
     siminfobox.appendChild(WebUtil.addInfoField("TOTAL STORAGE: " + JSON.stringify(simulation.get_wealth())));
+    siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: " + JSON.stringify(simulation.get_composition())));
 }
 
 function listPersonAttributes(context) {
     WebUtil.clearDiv(siminfobox);
     siminfobox.appendChild(WebUtil.addInfoField("Name: " + simulation.people[context.name].name));
     siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + display_type[simulation.people[context.name].type]));
+    siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[context.name].age));
     siminfobox.appendChild(WebUtil.addInfoField("Income: " + JSON.stringify(simulation.people[context.name].income)));
     siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[context.name].store)));
+}
+
+function listSimulationLogs() {
+    WebUtil.clearDiv(siminfobox);
+    for (let i = simulation.log_queue.length-1; i >= 0; i--) {
+        siminfobox.appendChild(WebUtil.addInfoField(simulation.log_queue[i]));
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +226,20 @@ function runContainer(): void {
     listGeneralInfo();
 }
 
+let toggleLogButton = (() => {
+    let button_pressed = false;
+    return () => {
+        if (button_pressed) {
+            listGeneralInfo();
+            logButton.style.borderStyle = "outset";
+        } else {
+            listSimulationLogs();
+            logButton.style.borderStyle = "inset";
+        }
+        button_pressed = !button_pressed;
+    }
+})();
+
 let regenButton = document.getElementById("regen");
 regenButton.addEventListener("click", () => {
     generateContainer();
@@ -218,4 +248,8 @@ regenButton.addEventListener("click", () => {
 let runTurnButton = document.getElementById("maketurn");
 runTurnButton.addEventListener("click", () => {
     runContainer();
+});
+
+logButton.addEventListener("click", () => {
+    toggleLogButton();
 });
