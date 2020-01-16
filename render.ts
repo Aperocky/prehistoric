@@ -65,6 +65,14 @@ const people_color_type = {
     MORT: 0x666666,
 }
 
+// Fix texture to prevent memory leak
+const people_texture = {
+    HUNT: getPeopleTexture(people_color_type["HUNT"]),
+    FISH: getPeopleTexture(people_color_type["FISH"]),
+    FARM: getPeopleTexture(people_color_type["FARM"]),
+    MORT: getPeopleTexture(people_color_type["MORT"]),
+}
+
 // ---------------------------------------------------------------------------
 // Get Map Sprites for background land/water
 // ---------------------------------------------------------------------------
@@ -104,7 +112,7 @@ function getPeopleTexture(color: number, radius: number = 4): PIXI.Texture {
 
 function getPeopleSprite(ptype: string): PIXI.Sprite {
     // change after ptype addition.
-    let texture = getPeopleTexture(people_color_type[ptype]);
+    let texture = people_texture[ptype];
     let sprite = new PIXI.Sprite(texture);
     sprite.anchor.set(0.5);
     sprite.zIndex = 100;
