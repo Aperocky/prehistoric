@@ -197,12 +197,7 @@ function createPeopleSprite(): void {
 function generateContainer(): void {
     simulation.generate();
     const terrainMap: number[][] = simulation.geography;
-    // Remove all child that currently exist
-    for (let i = app.stage.children.length - 1; i >= 0; i--) {
-        app.stage.removeChild(app.stage.children[i]);
-    }
-    // Map sprites
-    app.stage.addChild(mapContainer);
+    mapContainer.removeChildren();
     for (let i = 0; i < FIXED_MAP_SIZE; i++) {
         for (let j = 0; j < FIXED_MAP_SIZE; j++) {
             const terrainSprite = getSprite(terrainMap[i][j]);
