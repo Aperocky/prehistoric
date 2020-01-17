@@ -226,9 +226,9 @@ const hunter: PersonType = {
         FOOD : 0.5
     },
     change_func: (person, map_cache) => {
-        if ("FOOD" in person.deficit) {
+        if ("FOOD" in person.deficit || person.income["FOOD"] < 0.4) {
             let point = ResourceMap.pointToStr(person.x, person.y);
-            if (map_cache[point].isCoast) {
+            if (map_cache[point].isCoast && Math.random() < 0.8) {
                 return "FISH";
             }
             // not everyone wants to farm even when hungry.

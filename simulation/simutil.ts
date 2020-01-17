@@ -30,7 +30,7 @@ export function create_production_map(effort_map: ResourceMap, geography: number
         // Building coming in subsequent feature.
         let final_production_type: string;
         let final_production_count: number = 0;
-        for (let [production_type, work_strength] of Object.entries(effort.resource)) {
+        for (let [production_type, work_strength] of Object.entries(effort)) {
             let production = PRODUCE_MAP[production_type](work_strength, point_geography, {});
             if (production > final_production_count) {
                 final_production_type = production_type;
@@ -52,7 +52,7 @@ function get_single_draft_type(draft_map: ResourceMap, production_map: ResourceM
         let pointstr = ResourceMap.pointToStr(point.x, point.y);
         if (pointstr in production_map.resourceMap) {
             // Guaranteed to have only one type in production_map
-            let production_type_in_tile = Object.keys(production_map.resourceMap[pointstr].resource)[0];
+            let production_type_in_tile = Object.keys(production_map.resourceMap[pointstr])[0];
             if (production_type_in_tile == draft_type) {
                 draft_map.place_resource_with_position(pointstr, person.unique_id, draft_stat[1]); 
             }

@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
+import { ResourceMap } from "./map/informationMap";
 // Buttons
 const logButton = document.getElementById("logbut");
 
@@ -150,6 +151,34 @@ function listPersonAttributes(context) {
     siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[context.name].store)));
 }
 
+function displayLocationInfo() {
+    console.log(this);
+    WebUtil.clearDiv(siminfobox);
+    let pointstr = this.name;
+    let location_info = simulation.get_location_info(pointstr);
+    siminfobox.appendChild(WebUtil.addInfoField("Location: " + pointstr));
+    siminfobox.appendChild(WebUtil.addInfoField("Resource: " + location_info["resource"]));
+    siminfobox.appendChild(WebUtil.addInfoField("Production: " + location_info["count"]));
+    siminfobox.appendChild(WebUtil.addInfoField("Draft: "));
+    for (let [pid, draft] of Object.entries(location_info["draft"])) {
+        let person_name = simulation.people[pid].name;
+        siminfobox.appendChild(WebUtil.addInfoField(person_name + ": " + draft));
+    }
+}
+
+//let displayLocationToggler = (() => {
+//    let toggler_status = false;
+//    return (context) => {
+//        if (toggler_status) {
+//            listGeneralInfo();
+//        } else {
+//            console.log(context);
+//            displayLocationInfo(context);
+//        }
+//        toggler_status = !toggler_status;
+//    }
+//})();
+
 function listSimulationLogs() {
     WebUtil.clearDiv(siminfobox);
     for (let i = simulation.log_queue.length-1; i >= 0; i--) {
@@ -192,9 +221,13 @@ function generateContainer(): void {
     mapContainer.removeChildren();
     for (let i = 0; i < FIXED_MAP_SIZE; i++) {
         for (let j = 0; j < FIXED_MAP_SIZE; j++) {
-            const terrainSprite = getSprite(terrainMap[i][j]);
+            let terrainSprite = getSprite(terrainMap[i][j]);
+            terrainSprite.name = ResourceMap.pointToStr(i, j);
             terrainSprite.x = i * SPRITE_SIZE;
             terrainSprite.y = j * SPRITE_SIZE;
+            terrainSprite.interactive = true;
+            terrainSprite.buttonMode = true;
+            terrainSprite.on("mousedown", displayLocationInfo);
             mapContainer.addChild(terrainSprite);
         }
     }

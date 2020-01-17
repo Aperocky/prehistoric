@@ -1,8 +1,8 @@
 import { Point } from "./mapUtil";
 
-type ResourceInformation = {
-    resource : { [key: string] : number };
-}
+// type ResourceInformation = {
+//     resource : { [key: string] : number };
+// }
 
 type LocalInformation = {
     geography: number;
@@ -10,15 +10,15 @@ type LocalInformation = {
     building: string;
 }
 
-function newRI(): ResourceInformation {
-    return { resource: {}};
-}
+// function newRI(): ResourceInformation {
+//     return { resource: {}};
+// }
 
 export class ResourceMap {
     boundary: number; // Assume square
-    resourceMap : { [key: string] : ResourceInformation };
+    resourceMap : { [key: string] : { [key: string]: number }} ;
 
-    constructor(boundary: number){
+    constructor(boundary: number) {
         this.resourceMap = {};
         this.boundary = boundary;
     }
@@ -45,15 +45,15 @@ export class ResourceMap {
 
     place_resource_with_position(pointstr: string, resourceType: string, resourceCount: number): void {
         if (pointstr in this.resourceMap) {
-            let resourceInformation: ResourceInformation = this.resourceMap[pointstr];
-            if (resourceType in resourceInformation.resource) {
-                resourceInformation.resource[resourceType] += resourceCount;
+            let resourceInformation = this.resourceMap[pointstr];
+            if (resourceType in resourceInformation) {
+                resourceInformation[resourceType] += resourceCount;
             } else {
-                resourceInformation.resource[resourceType] = resourceCount;
+                resourceInformation[resourceType] = resourceCount;
             }
         } else {
-            this.resourceMap[pointstr] = newRI();
-            this.resourceMap[pointstr].resource[resourceType] = resourceCount;
+            this.resourceMap[pointstr] = {};
+            this.resourceMap[pointstr][resourceType] = resourceCount;
         }
     }
 
@@ -66,20 +66,20 @@ export class ResourceMap {
         this.place_resource_with_position(pointstr, resourceType, resourceCount);
     }
 
-    get_resource(x: number, y: number) : ResourceInformation {
+    get_resource(x: number, y: number) : { [key: string]: number } {
         let pointstr = ResourceMap.pointToStr(x, y);
         if (pointstr in this.resourceMap) {
             return this.resourceMap[pointstr];
         } else {
-            return newRI();
+            return {};
         }
     }
 
     get_resource_type(x: number, y: number, resourceType: string) : number {
         let pointstr = ResourceMap.pointToStr(x, y);
         if (pointstr in this.resourceMap) {
-            if (resourceType in this.resourceMap[pointstr].resource) {
-                return this.resourceMap[pointstr].resource[resourceType];
+            if (resourceType in this.resourceMap[pointstr]) {
+                return this.resourceMap[pointstr][resourceType];
             }
         }
         return 0;

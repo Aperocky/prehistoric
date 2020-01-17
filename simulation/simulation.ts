@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
 
 export const FIXED_MAP_SIZE = 20;
-const INITIAL_BATCH_SIZE = 10;
+const INITIAL_BATCH_SIZE = 20;
 
 export class Simulation {
     // General
@@ -39,9 +39,11 @@ export class Simulation {
 
     next_round() {
         console.log("Going to next round");
+        let people_by_location = this.get_people_for_show();
         for (let person of Object.values(this.people)) {
             if (person.type == "MORT") {
                 // RIP
+                this.inherit_from(person, people_by_location);
                 console.log(person.name + " has left the world, RIP");
                 this.log_to_queue(person.name + " has left the world, RIP");
                 delete this.people[person.unique_id];
@@ -112,9 +114,9 @@ export class Simulation {
         let harvest_result = {}
         for (let [location, produce] of Object.entries(this.production_map.resourceMap)) {
             if (location in this.draft_map.resourceMap) {
-                let draft_information = this.draft_map.resourceMap[location].resource;
-                let produce_type = Object.keys(this.production_map.resourceMap[location].resource)[0];
-                let produce_count = Object.values(this.production_map.resourceMap[location].resource)[0];
+                let draft_information = this.draft_map.resourceMap[location];
+                let produce_type = Object.keys(this.production_map.resourceMap[location])[0];
+                let produce_count = Object.values(this.production_map.resourceMap[location])[0];
                 // Total draft strength in this location
                 let total_draft_strength = Object.values(draft_information).reduce((a,b) => a+b, 0);
                 for (let [person_id, draft_strength] of Object.entries(draft_information)) {
@@ -192,6 +194,26 @@ export class Simulation {
         this.log_queue.push((4500-this.year) + " BC: " + log);
     }
 
+    inherit_from(person: Person, people_by_location) : void {
+        let pointstr = ResourceMap.pointToStr(person.x, person.y);
+        let people_in_location = people_by_location[pointstr];
+        if (people_in_location.length > 1) {
+            let benecount = people_in_location.length - 1
+            for (let [rtype, rcount] of Object.entries(person.store)) {
+                for (let benefactor of people_in_location) {
+                    if (benefactor == person) {
+                        continue;
+                    }
+                    if (rtype in benefactor.store) {
+                        benefactor.store[rtype] += rcount / benecount;
+                    } else {
+                        benefactor.store[rtype] = rcount / benecount;
+                    }
+                }
+            }
+        }
+    }
+
     get_people_for_show() : { [key: string] : Array<Person> } {
         let result = {};
         for (let person of Object.values(this.people)) {
@@ -245,6 +267,27 @@ export class Simulation {
             }
         }
         return composition;
+    }
+
+    get_location_info(pointstr: string) {
+        let location_info = {};
+        if (pointstr in this.effort_map.resourceMap) {
+            let effort_info = this.effort_map.resourceMap[pointstr];
+            location_info["potential_effort"] = effort_info;
+        }
+        if (pointstr in this.production_map.resourceMap) {
+            let produce_info = this.production_map.resourceMap[pointstr];
+            let produce_type = Object.keys(produce_info)[0];
+            let produce_count = produce_info[produce_type];
+            location_info["resource"] = produce_type;
+            location_info["count"] = produce_count;
+        }
+        if (pointstr in this.draft_map.resourceMap) {
+            // shallow copy works as draft_info is single layer.
+            let draft_info = Object.assign({}, this.draft_map.resourceMap[pointstr]);
+            location_info["draft"] = draft_info
+        }
+        return location_info;
     }
 }
 
