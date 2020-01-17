@@ -16,21 +16,12 @@ gamezone.appendChild(app.view);
 // ---------------------------------------------------------------------------
 
 let loader = new PIXI.Loader();
-loader.add('grass1', 'assets/blocks/nature/grass1.png')
-    .add('grass2', 'assets/blocks/nature/grass2.png')
-    .add('grass3', 'assets/blocks/nature/grass3.png')
-    .add('sand1', 'assets/blocks/nature/sand1.png')
-    .add('sand2', 'assets/blocks/nature/sand2.png')
-    .add('sand3', 'assets/blocks/nature/sand3.png')
-    .add('shrubs1', 'assets/blocks/nature/shrubs1.png')
-    .add('shrubs2', 'assets/blocks/nature/shrubs2.png')
-    .add('water', 'assets/blocks/nature/water.png')
-    .add('deepwater', 'assets/blocks/nature/deepwater.png')
-    .add('rocks1', 'assets/blocks/nature/rocks1.png')
-    .add('rocks2', 'assets/blocks/nature/rocks2.png');
+loader.add("assets/blocks/packed/groundt_texture.json");
+let sheet;
 
 loader.onError.add((error) => console.error(error));
-loader.load((loader, resources) => {
+loader.load((loader) => {
+    sheet = loader.resources["assets/blocks/packed/groundt_texture.json"].spritesheet;
     generateContainer();
 });
 
@@ -80,7 +71,8 @@ const people_texture = {
 function getRandomTextureForTerrain(terrain: number): PIXI.Texture {
     let possibleTextures: Array<string> = textureMap[terrain];
     let chosenTexture: string = possibleTextures[Math.floor(Math.random() * possibleTextures.length)]
-    return loader.resources[chosenTexture].texture;
+    // return loader.resources[chosenTexture].texture;
+    return sheet.textures[chosenTexture + ".png"];
 }
 
 function getSprite(terrain: number, size = 32): PIXI.Sprite {
