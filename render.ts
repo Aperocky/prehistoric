@@ -2,9 +2,10 @@ import * as PIXI from "pixi.js";
 import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 import { ResourceMap } from "./map/informationMap";
+import { DISPLAY_TYPE } from "./simulation/person";
+
 // Buttons
 const logButton = document.getElementById("logbut");
-
 const SPRITE_SIZE = 32;
 const app = new PIXI.Application({
     width: 640, height: 640
@@ -42,13 +43,6 @@ const textureMap = {
     2: ["grass1", "grass2", "grass3"],
     3: ["shrubs1", "shrubs2"],
     4: ["rocks1", "rocks2"],
-}
-
-const display_type = {
-    HUNT: "gatherer",
-    FARM: "farmer",
-    FISH: "fisher",
-    MORT: "RIP",
 }
 
 const people_color_type = {
@@ -162,14 +156,14 @@ function listGeneralInfo() {
 function listPersonAttributes(unique_id, full=true) {
     if (full) {
         siminfobox.appendChild(WebUtil.addInfoField("Name: " + simulation.people[unique_id].name));
-        siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + display_type[simulation.people[unique_id].type]));
+        siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + DISPLAY_TYPE[simulation.people[unique_id].type]));
         siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[unique_id].age));
         siminfobox.appendChild(WebUtil.addInfoField("Income: " + JSON.stringify(simulation.people[unique_id].income)));
         siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[unique_id].store)));
         siminfobox.appendChild(WebUtil.addInfoField("Message: " + simulation.people[unique_id].eventlog));
     } else {
         siminfobox.appendChild(WebUtil.addInfoField("--------------------------", "#999"));
-        siminfobox.appendChild(WebUtil.addInfoField(`${simulation.people[unique_id].name}, ${display_type[simulation.people[unique_id].type]}`));
+        siminfobox.appendChild(WebUtil.addInfoField(`${simulation.people[unique_id].name}, ${DISPLAY_TYPE[simulation.people[unique_id].type]}`));
         siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[unique_id].age));
         siminfobox.appendChild(WebUtil.addInfoField(simulation.people[unique_id].eventlog));
     }
@@ -196,7 +190,7 @@ function listLocationInfo(pointstr) {
         for (let [pid, draft] of Object.entries(location_info["draft"])) {
             let person_name = simulation.people[pid].name;
             let person_type = simulation.people[pid].type;
-            siminfobox.appendChild(WebUtil.addInfoField(person_name + ", " + display_type[person_type]));
+            siminfobox.appendChild(WebUtil.addInfoField(person_name + ", " + DISPLAY_TYPE[person_type]));
         }
     }
 }

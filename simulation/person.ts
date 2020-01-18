@@ -8,6 +8,13 @@ import { Point } from "../map/mapUtil";
 const MORTALITY = "MORT";
 const NO_CHANGE = "STAY";
 
+export const DISPLAY_TYPE = {
+    HUNT: "gatherer",
+    FARM: "farmer",
+    FISH: "fisher",
+    MORT: "deceased",
+}
+
 export type Person = {
     x: number;
     y: number;
@@ -129,7 +136,7 @@ export class PersonUtil {
         if (pstatus == NO_CHANGE) {
             return;
         }
-        person.eventlog += `She changed from ${person.type}ER to ${pstatus}ER. `;
+        person.eventlog += `She changed from ${DISPLAY_TYPE[person.type]} to ${DISPLAY_TYPE[pstatus]}. `;
         person.type = pstatus;
     }
 
