@@ -18,12 +18,13 @@ export function addInfoField(text, color="") {
 
 export function startingHelp(siminfobox) {
     clearDiv(siminfobox);
-    siminfobox.appendChild(addInfoField("# Get started: ", "#999"));
-    siminfobox.appendChild(addInfoField("# Change the map by RE-GENERATE", "#999"));
-    siminfobox.appendChild(addInfoField("# It's hard to live in a desert, so get some green maps", "#999"));
-    siminfobox.appendChild(addInfoField("# Run-Turn to start simulation", "#999"));
-    siminfobox.appendChild(addInfoField("", "#999"));
-    siminfobox.appendChild(addInfoField("# Currently only gatherer are supported", "#999"));
-    siminfobox.appendChild(addInfoField("# More are coming fast! ", "#999"));
+    siminfobox.appendChild(addInfoField("Get started: ", "#999"));
+    siminfobox.appendChild(addInfoField("Change the map by RE-GENERATE", "#999"));
+    siminfobox.appendChild(addInfoField("RUN-TURN to start simulation", "#999"));
+    siminfobox.appendChild(addInfoField("=============================", "#888"));
+    siminfobox.appendChild(addInfoField("Everyone starts as gatherer, but they can change with circumstances", "#999"));
+    siminfobox.appendChild(addInfoField("Each tile display a max of 15 people, more info can be found by clicking on land itself", "#999"));
+    siminfobox.appendChild(addInfoField("Buildings are coming soon", "#999"));
+    siminfobox.appendChild(addInfoField("=============================", "#888"));
     siminfobox.appendChild(addInfoField("# Special thanks to Anuken for sprites", "#999"));
 }

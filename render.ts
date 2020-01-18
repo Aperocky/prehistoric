@@ -17,12 +17,12 @@ gamezone.appendChild(app.view);
 // ---------------------------------------------------------------------------
 
 let loader = new PIXI.Loader();
-loader.add("assets/blocks/packed/groundt_texture.json");
+loader.add("assets/blocks/packed/groundpak.json");
 let sheet;
 
 loader.onError.add((error) => console.error(error));
 loader.load((loader) => {
-    sheet = loader.resources["assets/blocks/packed/groundt_texture.json"].spritesheet;
+    sheet = loader.resources["assets/blocks/packed/groundpak.json"].spritesheet;
     generateContainer();
 });
 
@@ -33,6 +33,7 @@ const siminfobox = document.getElementById("siminfobox");
 
 // Stateful variables that need to exist outside functions
 let peopleSprites: PIXI.Sprite[];
+let map_sprite_state = {};
 
 const textureMap = {
     "-1": ["deepwater"],
@@ -53,7 +54,7 @@ const display_type = {
 const people_color_type = {
     HUNT: 0x023220,
     FISH: 0x005e5e,
-    FARM: 0x909050,
+    FARM: 0x808040,
     MORT: 0x666666,
 }
 
@@ -73,7 +74,7 @@ function getRandomTextureForTerrain(terrain: number): PIXI.Texture {
     let possibleTextures: Array<string> = textureMap[terrain];
     let chosenTexture: string = possibleTextures[Math.floor(Math.random() * possibleTextures.length)]
     // return loader.resources[chosenTexture].texture;
-    return sheet.textures[chosenTexture + ".png"];
+    return sheet.textures[chosenTexture];
 }
 
 function getSprite(terrain: number, size = 32): PIXI.Sprite {
@@ -118,14 +119,31 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
     return sprite;
 }
 
+// ---------------------------------------------------------------------------
+// Display hooks
+// ---------------------------------------------------------------------------
+
 function emphasizePerson() {
     this.scale.set(1);
-    listPersonAttributes(this);
+    WebUtil.clearDiv(siminfobox);
+    listPersonAttributes(this.name);
 }
 
 function unEmphasizePerson() {
     this.scale.set(0.5);
+    WebUtil.clearDiv(siminfobox);
     listGeneralInfo();
+}
+
+function displayLocationInfo() {
+    WebUtil.clearDiv(siminfobox);
+    let pointstr = this.name;
+    if (!map_sprite_state[pointstr]) {
+        listLocationInfo(pointstr);
+    } else {
+        listGeneralInfo();
+    }
+    map_sprite_state[pointstr] = !map_sprite_state[pointstr];
 }
 
 // ---------------------------------------------------------------------------
@@ -133,7 +151,6 @@ function unEmphasizePerson() {
 // ---------------------------------------------------------------------------
 
 function listGeneralInfo() {
-    WebUtil.clearDiv(siminfobox);
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person to see details..", "#999"));
     siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
     siminfobox.appendChild(WebUtil.addInfoField("TOTAL POPULATION: " + Object.keys(simulation.people).length));
@@ -142,42 +159,47 @@ function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: " + JSON.stringify(simulation.get_composition())));
 }
 
-function listPersonAttributes(context) {
-    WebUtil.clearDiv(siminfobox);
-    siminfobox.appendChild(WebUtil.addInfoField("Name: " + simulation.people[context.name].name));
-    siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + display_type[simulation.people[context.name].type]));
-    siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[context.name].age));
-    siminfobox.appendChild(WebUtil.addInfoField("Income: " + JSON.stringify(simulation.people[context.name].income)));
-    siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[context.name].store)));
-}
-
-function displayLocationInfo() {
-    console.log(this);
-    WebUtil.clearDiv(siminfobox);
-    let pointstr = this.name;
-    let location_info = simulation.get_location_info(pointstr);
-    siminfobox.appendChild(WebUtil.addInfoField("Location: " + pointstr));
-    siminfobox.appendChild(WebUtil.addInfoField("Resource: " + location_info["resource"]));
-    siminfobox.appendChild(WebUtil.addInfoField("Production: " + location_info["count"]));
-    siminfobox.appendChild(WebUtil.addInfoField("Draft: "));
-    for (let [pid, draft] of Object.entries(location_info["draft"])) {
-        let person_name = simulation.people[pid].name;
-        siminfobox.appendChild(WebUtil.addInfoField(person_name + ": " + draft));
+function listPersonAttributes(unique_id, full=true) {
+    if (full) {
+        siminfobox.appendChild(WebUtil.addInfoField("Name: " + simulation.people[unique_id].name));
+        siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + display_type[simulation.people[unique_id].type]));
+        siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[unique_id].age));
+        siminfobox.appendChild(WebUtil.addInfoField("Income: " + JSON.stringify(simulation.people[unique_id].income)));
+        siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[unique_id].store)));
+        siminfobox.appendChild(WebUtil.addInfoField("Message: " + simulation.people[unique_id].eventlog));
+    } else {
+        siminfobox.appendChild(WebUtil.addInfoField("--------------------------", "#999"));
+        siminfobox.appendChild(WebUtil.addInfoField(`${simulation.people[unique_id].name}, ${display_type[simulation.people[unique_id].type]}`));
+        siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[unique_id].age));
+        siminfobox.appendChild(WebUtil.addInfoField(simulation.people[unique_id].eventlog));
     }
 }
 
-//let displayLocationToggler = (() => {
-//    let toggler_status = false;
-//    return (context) => {
-//        if (toggler_status) {
-//            listGeneralInfo();
-//        } else {
-//            console.log(context);
-//            displayLocationInfo(context);
-//        }
-//        toggler_status = !toggler_status;
-//    }
-//})();
+function listLocationInfo(pointstr) {
+    let location_info = simulation.get_location_info(pointstr);
+    siminfobox.appendChild(WebUtil.addInfoField("Location: " + pointstr));
+    siminfobox.appendChild(WebUtil.addInfoField("Resource: " + (location_info["resource"] ? location_info["resource"] + ", " + location_info["count"] : "None")));
+        siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
+    let population = 0;
+    if (pointstr in simulation.people_by_location) {
+        population = simulation.people_by_location[pointstr].length;
+    }
+    siminfobox.appendChild(WebUtil.addInfoField("Population: " + population));
+    if (population > 0) {
+        for (let person of simulation.people_by_location[pointstr]) {
+            listPersonAttributes(person.unique_id, false);
+        }
+    }
+    if ("draft" in location_info) {
+        siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
+        siminfobox.appendChild(WebUtil.addInfoField("People who draft resource from here: "));
+        for (let [pid, draft] of Object.entries(location_info["draft"])) {
+            let person_name = simulation.people[pid].name;
+            let person_type = simulation.people[pid].type;
+            siminfobox.appendChild(WebUtil.addInfoField(person_name + ", " + display_type[person_type]));
+        }
+    }
+}
 
 function listSimulationLogs() {
     WebUtil.clearDiv(siminfobox);
@@ -198,6 +220,11 @@ function createPeopleSprite(): void {
         let xbase: number = point.x * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
         let ybase: number = point.y * SPRITE_SIZE + 4 - SPRITE_SIZE/2;
         for (let i = 0; i < persons.length; i++) {
+            if (i == 15) {
+                // Leave a silver of land for clicks.
+                // And not display the rest of dots.
+                break;
+            }
             let horz = (i % 4) * 8;
             let vert = Math.floor(i/4) * 8;
             let xreal = xbase + horz;
@@ -223,6 +250,7 @@ function generateContainer(): void {
         for (let j = 0; j < FIXED_MAP_SIZE; j++) {
             let terrainSprite = getSprite(terrainMap[i][j]);
             terrainSprite.name = ResourceMap.pointToStr(i, j);
+            map_sprite_state[terrainSprite.name] = false;
             terrainSprite.x = i * SPRITE_SIZE;
             terrainSprite.y = j * SPRITE_SIZE;
             terrainSprite.interactive = true;
@@ -251,6 +279,7 @@ function runContainer(): void {
     for (let sp of peopleSprites) {
         mapContainer.addChild(sp);
     }
+    WebUtil.clearDiv(siminfobox);
     listGeneralInfo();
 }
 
@@ -258,9 +287,11 @@ let toggleLogButton = (() => {
     let button_pressed = false;
     return () => {
         if (button_pressed) {
+            WebUtil.clearDiv(siminfobox);
             listGeneralInfo();
             logButton.style.borderStyle = "outset";
         } else {
+            WebUtil.clearDiv(siminfobox);
             listSimulationLogs();
             logButton.style.borderStyle = "inset";
         }

@@ -1,18 +1,10 @@
 import { Point } from "./mapUtil";
 
-// type ResourceInformation = {
-//     resource : { [key: string] : number };
-// }
-
-type LocalInformation = {
+export type LocalInformation = {
     geography: number;
     isCoast: boolean;
     building: string;
 }
-
-// function newRI(): ResourceInformation {
-//     return { resource: {}};
-// }
 
 export class ResourceMap {
     boundary: number; // Assume square

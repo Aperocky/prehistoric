@@ -1,6 +1,6 @@
 import { TerrainMap, Point } from "../map/mapUtil";
-import { ResourceMap, createMapCache } from "../map/informationMap";
-import { Person, TYPE_MAP, PersonUtil } from "./person";
+import { ResourceMap, createMapCache, LocalInformation } from "../map/informationMap";
+import { Person, PersonUtil } from "./person";
 import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
 
@@ -10,7 +10,7 @@ const INITIAL_BATCH_SIZE = 20;
 export class Simulation {
     // General
     geography : number[][];
-    map_cache : { [location: string] : object };
+    map_cache : { [location: string] : LocalInformation };
     land_tiles : Array<string>;
     people : { [key: string] : Person };
     log_queue : string[];
@@ -21,6 +21,7 @@ export class Simulation {
     production_map : ResourceMap;
     draft_map : ResourceMap;
     income_by_people : { [key: string] : { [key: string] : number }};
+    people_by_location : { [key: string] : Person[] };
 
     generate() {
         console.log("Refreshing map");
@@ -34,18 +35,18 @@ export class Simulation {
         this.production_map = new ResourceMap(FIXED_MAP_SIZE);
         this.draft_map = new ResourceMap(FIXED_MAP_SIZE);
         this.income_by_people = {};
+        this.people_by_location = {};
         this.log_queue = [];
     }
 
     next_round() {
         console.log("Going to next round");
-        let people_by_location = this.get_people_for_show();
         for (let person of Object.values(this.people)) {
             if (person.type == "MORT") {
                 // RIP
-                this.inherit_from(person, people_by_location);
+                this.inherit_from(person);
                 console.log(person.name + " has left the world, RIP");
-                this.log_to_queue(person.name + " has left the world, RIP");
+                this.log_to_queue(`RIP ${person.name}, ${person.eventlog}`);
                 delete this.people[person.unique_id];
             }
         }
@@ -58,6 +59,7 @@ export class Simulation {
         this.income_by_people = this.harvest();
         this.distribute();
         this.commence_life();
+        this.people_by_location = this.get_people_for_show();
     }
 
     getNewTerrainMap() : number[][] {
@@ -167,6 +169,8 @@ export class Simulation {
     commence_life() {
         console.log("people count: " + Object.values(this.people).length);
         for (let person of Object.values(this.people)) {
+            // Refresh event log
+            person.eventlog = "";
             // Movements!
             person.age += 1;
             PersonUtil.add_income_to_store(person);
@@ -176,8 +180,13 @@ export class Simulation {
             if (!(person.type == "MORT")) {
                 let new_person = PersonUtil.run_replicate_func(person);
                 if (new_person) {
-                    this.log_to_queue(person.name + " is born");
+                    this.log_to_queue(new_person.name + " is born");
                     this.people[new_person.unique_id] = new_person;
+                    if (person.type == "MORT") {
+                        person.eventlog += `She died giving birth to ${new_person.name}`;
+                    } else {
+                        person.eventlog += `She gave birth to ${new_person.name}`;
+                    }
                 }
             }
         }
@@ -194,9 +203,9 @@ export class Simulation {
         this.log_queue.push((4500-this.year) + " BC: " + log);
     }
 
-    inherit_from(person: Person, people_by_location) : void {
+    inherit_from(person: Person) : void {
         let pointstr = ResourceMap.pointToStr(person.x, person.y);
-        let people_in_location = people_by_location[pointstr];
+        let people_in_location = this.people_by_location[pointstr];
         if (people_in_location.length > 1) {
             let benecount = people_in_location.length - 1
             for (let [rtype, rcount] of Object.entries(person.store)) {

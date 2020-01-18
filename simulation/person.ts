@@ -23,13 +23,13 @@ export type Person = {
 
 export class PersonUtil {
 
-    static move_person(person: Person, mapCache): void {
+    static move_person(person: Person, map_cache): void {
         let north = ResourceMap.pointToStr(person.x, person.y + 1);
         let south = ResourceMap.pointToStr(person.x, person.y - 1);
         let west = ResourceMap.pointToStr(person.x + 1, person.y);
         let east = ResourceMap.pointToStr(person.x - 1, person.y);
         let decision: string = [north, east, west, south][Math.floor(Math.random()*4)];
-        if (decision in mapCache && mapCache[decision].geography > 0) {
+        if (decision in map_cache && map_cache[decision].geography > 0) {
             let newloc: Point = JSON.parse(decision);
             person.x = newloc.x;
             person.y = newloc.y;
@@ -56,9 +56,11 @@ export class PersonUtil {
                 } else {
                     deficit[consume_type] = consume_count - person.store[consume_type];
                     person.store[consume_type] = 0;
+                    person.eventlog += `She's ${deficit_complaints_map[consume_type]}. `
                 }
             } else {
                 deficit[consume_type] = consume_count;
+                person.eventlog += `She's ${deficit_complaints_map[consume_type]}. `
             }
         }
         person.deficit = deficit;
@@ -116,15 +118,18 @@ export class PersonUtil {
         // General change logic independent to types, reserved for MORTALITY
         // Starvation is bad for health
         if (Math.random() < person.deficit[RESOURCE_TYPE.FOOD]){
+            person.eventlog = "She died of hunger. ";
             pstatus = MORTALITY;
         }
         // Ageing
         if (Math.random() * 60 < person.age - 60) {
+            person.eventlog = "She died of old age. ";
             pstatus = MORTALITY;
         }
         if (pstatus == NO_CHANGE) {
             return;
         }
+        person.eventlog += `She changed from ${person.type}ER to ${pstatus}ER. `;
         person.type = pstatus;
     }
 
@@ -273,8 +278,12 @@ const farmer: PersonType = {
     }
 }
 
-export const TYPE_MAP = {
+const TYPE_MAP = {
     "HUNT" : hunter,
     "FARM" : farmer,
     "FISH" : fisher,
+}
+
+const deficit_complaints_map = {
+    "FOOD" : "hungry",
 }
