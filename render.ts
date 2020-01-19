@@ -173,7 +173,12 @@ function listLocationInfo(pointstr) {
     let location_info = simulation.get_location_info(pointstr);
     siminfobox.appendChild(WebUtil.addInfoField("Location: " + pointstr));
     siminfobox.appendChild(WebUtil.addInfoField("Resource: " + (location_info["resource"] ? location_info["resource"] + ", " + location_info["count"] : "None")));
+    siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
+    if (simulation.building_by_location[pointstr]) {
+        siminfobox.appendChild(WebUtil.addInfoField(`Building: ${simulation.building_by_location[pointstr].type}`))
+        siminfobox.appendChild(WebUtil.addInfoField(`Maintenance: ${simulation.building_by_location[pointstr].maintenance}`))
         siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
+    }
     let population = 0;
     if (pointstr in simulation.people_by_location) {
         population = simulation.people_by_location[pointstr].length;

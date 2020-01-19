@@ -1,6 +1,7 @@
 import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap, createMapCache, LocalInformation } from "../map/informationMap";
 import { Person, PersonUtil } from "./person";
+import { Building, BuildingUtil } from "./buildings";
 import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
 
@@ -22,6 +23,7 @@ export class Simulation {
     draft_map : ResourceMap;
     income_by_people : { [key: string] : { [key: string] : number }};
     people_by_location : { [key: string] : Person[] };
+    building_by_location : { [key: string] : Building };
 
     generate() {
         console.log("Refreshing map");
@@ -37,15 +39,16 @@ export class Simulation {
         this.income_by_people = {};
         this.people_by_location = {};
         this.log_queue = [];
+        this.building_by_location = {};
     }
 
+    // State update function
     next_round() {
         console.log("Going to next round");
         for (let person of Object.values(this.people)) {
             if (person.type == "MORT") {
                 // RIP
                 this.inherit_from(person);
-                console.log(person.name + " has left the world, RIP");
                 this.log_to_queue(`RIP ${person.name}, ${person.eventlog}`);
                 delete this.people[person.unique_id];
             }
@@ -53,13 +56,17 @@ export class Simulation {
         // Move first, so same people in same place create same contributions/ income
         this.year += 1;
         this.move_people();
+        // Map logic (production, distribution on map scale)
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.geography);
         this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this.production_map, FIXED_MAP_SIZE);
+        // People logic
         this.income_by_people = this.harvest();
         this.distribute();
         this.commence_life();
         this.people_by_location = this.get_people_for_show();
+        // Building logic
+        this.add_and_run_buildings();
     }
 
     getNewTerrainMap() : number[][] {
@@ -138,6 +145,37 @@ export class Simulation {
             }
         }
         return harvest_result;
+    }
+
+    add_and_run_buildings() {
+        // Adding buildings.
+        for (let [pointstr, people] of Object.entries(this.people_by_location)) {
+            if (pointstr in this.building_by_location) {
+                continue;
+            }
+            let building = BuildingUtil.create_building(pointstr, people);
+            if (building) {
+                this.building_by_location[pointstr] = building;
+            }
+        }
+        // Run all existing buildings
+        for (let [pointstr, building] of Object.entries(this.building_by_location)) {
+            let people: Person[] = [];
+            if (pointstr in this.people_by_location) {
+                people = this.people_by_location[pointstr];
+            }
+            let bstate = BuildingUtil.run_maintenance(building, people);
+            // Building has dilapidated, remove
+            if (bstate == "NONE") {
+                delete this.building_by_location[pointstr];
+                continue;
+            }
+            // Change building type
+            if (!(bstate == building.type)) {
+                building.type = bstate;
+                building.maintenance = BuildingUtil.get_start_maintenance(building);
+            }
+        }
     }
 
     move_people() {
