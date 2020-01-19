@@ -18,7 +18,7 @@ function roundToCent(num: number) : number {
     return Math.floor(num*100)/100;
 }
 
-function farmProduction(strength: number, terrain: number, buildings) : number {
+function farmProduction(strength: number, terrain: number, building) : number {
     let terrainModifiers = {
         2: 1,
         3: 0.25,
@@ -28,6 +28,9 @@ function farmProduction(strength: number, terrain: number, buildings) : number {
         return 0;
     } else {
         terrainModifier = terrainModifiers[terrain];
+    }
+    if (building && building.type == "FARM") {
+        terrainModifier *= 1.25;
     }
     let produce: number;
     if (strength < 1) {
@@ -39,7 +42,7 @@ function farmProduction(strength: number, terrain: number, buildings) : number {
     return roundToCent(produce);
 }
 
-function gathererProduction(strength: number, terrain: number, buildings) : number {
+function gathererProduction(strength: number, terrain: number, building) : number {
     let terrainModifiers = {
         1: 0.2,
         2: 0.5,
@@ -61,7 +64,7 @@ function gathererProduction(strength: number, terrain: number, buildings) : numb
     return roundToCent(produce);
 }
 
-function fishProduction(strength: number, terrain: number, buildings) : number {
+function fishProduction(strength: number, terrain: number, building) : number {
     let terrainModifiers = {
         0: 1,
         "-1": 0.5,

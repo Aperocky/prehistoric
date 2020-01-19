@@ -6,6 +6,11 @@ import { DISPLAY_TYPE } from "./simulation/person";
 
 // Buttons
 const logButton = document.getElementById("logbut");
+const showButton = document.getElementById("showbut");
+showButton.style.borderStyle = "inset";
+const runTurnButton = document.getElementById("maketurn");
+const regenButton = document.getElementById("regen");
+
 const SPRITE_SIZE = 32;
 const app = new PIXI.Application({
     width: 640, height: 640
@@ -31,10 +36,13 @@ const simulation = new Simulation();
 const mapContainer = new PIXI.Container();
 app.stage.addChild(mapContainer);
 const siminfobox = document.getElementById("siminfobox");
+const publicRenderer = PIXI.RenderTexture.create();
 
 // Stateful variables that need to exist outside functions
 let peopleSprites: PIXI.Sprite[];
+let buildingSprites: { [key: string]: PIXI.Sprite };
 let map_sprite_state = {};
+let people_shown = true;
 
 const textureMap = {
     "-1": ["deepwater"],
@@ -43,6 +51,15 @@ const textureMap = {
     2: ["grass1", "grass2", "grass3"],
     3: ["shrubs1", "shrubs2"],
     4: ["rocks1", "rocks2"],
+    100: ["farm1", "farm2"],
+    101: ["town1", "town2"],
+    102: ["city1"],
+}
+
+const building_to_texture_map = {
+    "FARM": 100,
+    "TOWN": 101,
+    "CITY": 102,
 }
 
 const people_color_type = {
@@ -67,11 +84,10 @@ const people_texture = {
 function getRandomTextureForTerrain(terrain: number): PIXI.Texture {
     let possibleTextures: Array<string> = textureMap[terrain];
     let chosenTexture: string = possibleTextures[Math.floor(Math.random() * possibleTextures.length)]
-    // return loader.resources[chosenTexture].texture;
     return sheet.textures[chosenTexture];
 }
 
-function getSprite(terrain: number, size = 32): PIXI.Sprite {
+function getSprite(terrain: number): PIXI.Sprite {
     let texture = PIXI.Texture.WHITE;
     if (!(terrain in textureMap)) {
         console.error("No such terrain exist");
@@ -147,10 +163,16 @@ function displayLocationInfo() {
 function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person to see details..", "#999"));
     siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
-    siminfobox.appendChild(WebUtil.addInfoField("TOTAL POPULATION: " + Object.keys(simulation.people).length));
-    siminfobox.appendChild(WebUtil.addInfoField("TOTAL PRODUCTION: " + JSON.stringify(simulation.get_gdp())));
-    siminfobox.appendChild(WebUtil.addInfoField("TOTAL STORAGE: " + JSON.stringify(simulation.get_wealth())));
-    siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: " + JSON.stringify(simulation.get_composition())));
+    siminfobox.appendChild(WebUtil.addInfoField(`TOTAL POPULATION: ${Object.keys(simulation.people).length}`));
+    WebUtil.splitLine(siminfobox);
+    siminfobox.appendChild(WebUtil.addInfoField(`TOTAL PRODUCTION: `));
+    WebUtil.objectToLines(siminfobox, simulation.get_gdp());
+    WebUtil.splitLine(siminfobox);
+    siminfobox.appendChild(WebUtil.addInfoField("TOTAL WEALTH: "));
+    WebUtil.objectToLines(siminfobox, simulation.get_wealth());
+    WebUtil.splitLine(siminfobox);
+    siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: ")); 
+    WebUtil.objectToLines(siminfobox, simulation.get_composition());
 }
 
 function listPersonAttributes(unique_id, full=true) {
@@ -177,6 +199,7 @@ function listLocationInfo(pointstr) {
     if (simulation.building_by_location[pointstr]) {
         siminfobox.appendChild(WebUtil.addInfoField(`Building: ${simulation.building_by_location[pointstr].type}`))
         siminfobox.appendChild(WebUtil.addInfoField(`Maintenance: ${simulation.building_by_location[pointstr].maintenance}`))
+        siminfobox.appendChild(WebUtil.addInfoField(`History: ${simulation.building_by_location[pointstr].age} years`))
         siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
     }
     let population = 0;
@@ -237,6 +260,37 @@ function createPeopleSprite(): void {
     }
 }
 
+function togglePeopleSprites(state: boolean): void {
+    for (let sprite of peopleSprites) {
+        sprite.visible = state;
+    }
+}
+
+function createBuildingSprite(): void {
+    // Clear no build areas
+    for (let pointstr of Object.keys(buildingSprites)) {
+        if (!(pointstr in simulation.building_by_location)) {
+            delete buildingSprites[pointstr];
+        }
+    }
+    for (let [pointstr, building] of Object.entries(simulation.building_by_location)) {
+        if (pointstr in buildingSprites) {
+            if (buildingSprites[pointstr].name == building.type) {
+                continue;
+            } else {
+                // The building type changed, refresh.
+                delete buildingSprites[pointstr];
+            }
+        }
+        let point = JSON.parse(pointstr);
+        let buildingSprite = getSprite(building_to_texture_map[building.type]);
+        buildingSprite.name = building.type;
+        buildingSprite.x = point.x * SPRITE_SIZE;
+        buildingSprite.y = point.y * SPRITE_SIZE;
+        buildingSprites[pointstr] = buildingSprite;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Implement main logic, regenerate whole map/ go to next turn.
 // ---------------------------------------------------------------------------
@@ -263,6 +317,8 @@ function generateContainer(): void {
     for (let sp of peopleSprites) {
         mapContainer.addChild(sp);
     }
+    buildingSprites = {};
+    createBuildingSprite()
     mapContainer.x = SPRITE_SIZE/2;
     mapContainer.y = SPRITE_SIZE/2;
     WebUtil.startingHelp(siminfobox);
@@ -270,7 +326,14 @@ function generateContainer(): void {
 
 function runContainer(): void {
     simulation.next_round();
-    // Remove old sprites
+    for (let xp of Object.values(buildingSprites)) {
+        mapContainer.removeChild(xp);
+    }
+    createBuildingSprite();
+    for (let xp of Object.values(buildingSprites)) {
+        mapContainer.addChild(xp);
+    }
+    // People
     for (let sp of peopleSprites) {
         mapContainer.removeChild(sp);
     }
@@ -279,6 +342,9 @@ function runContainer(): void {
         mapContainer.addChild(sp);
     }
     WebUtil.clearDiv(siminfobox);
+    if (!people_shown) {
+        toggleShowButton();
+    }
     listGeneralInfo();
 }
 
@@ -298,16 +364,34 @@ let toggleLogButton = (() => {
     }
 })();
 
-let regenButton = document.getElementById("regen");
+let toggleShowButton = (() => {
+    let button_pressed = true;
+    return () => {
+        if (button_pressed) {
+            togglePeopleSprites(true);
+            showButton.style.borderStyle = "inset";
+            people_shown = true;
+        } else {
+            togglePeopleSprites(false);
+            showButton.style.borderStyle = "outset";
+            people_shown = false;
+        }
+        button_pressed = !button_pressed;
+    }
+})();
+
 regenButton.addEventListener("click", () => {
     generateContainer();
 });
 
-let runTurnButton = document.getElementById("maketurn");
 runTurnButton.addEventListener("click", () => {
     runContainer();
 });
 
 logButton.addEventListener("click", () => {
     toggleLogButton();
+});
+
+showButton.addEventListener("click", () => {
+    toggleShowButton();
 });

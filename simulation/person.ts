@@ -30,13 +30,20 @@ export type Person = {
 
 export class PersonUtil {
 
-    static move_person(person: Person, map_cache): void {
+    static move_person(person: Person, map_cache, building_by_location): void {
         let north = ResourceMap.pointToStr(person.x, person.y + 1);
         let south = ResourceMap.pointToStr(person.x, person.y - 1);
         let west = ResourceMap.pointToStr(person.x + 1, person.y);
         let east = ResourceMap.pointToStr(person.x - 1, person.y);
         let decision: string = [north, east, west, south][Math.floor(Math.random()*4)];
+        let building = building_by_location[decision];
         if (decision in map_cache && map_cache[decision].geography > 0) {
+            if (building) {
+                if (building.type == "FARM" && person.type == "HUNT") {
+                    // Hunter may not enter farms.
+                    return;
+                }
+            }
             let newloc: Point = JSON.parse(decision);
             person.x = newloc.x;
             person.y = newloc.y;

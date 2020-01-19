@@ -1,6 +1,7 @@
 import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap } from "../map/informationMap";
 import { Person, PersonUtil } from "./person";
+import { Building } from "./buildings";
 import { PRODUCE_MAP, PRODUCE_TYPE } from "./resources";
 
 // Efforts at production
@@ -20,18 +21,20 @@ export function create_effort_map(people: Person[], boundary: number): ResourceM
 
 // Actual production by tile
 // The implementation of this function guarantees the production out of one tile can only be of one type.
-export function create_production_map(effort_map: ResourceMap, geography: number[][]): ResourceMap {
-    let boundary: number = geography.length;
+export function create_production_map(effort_map: ResourceMap, map_cache, building_by_location, boundary: number): ResourceMap {
     let production_map = new ResourceMap(boundary);
     // Use the strongest production type. i.e. you can't hunt and farm in same place.
     for (let [pointstr, effort] of Object.entries(effort_map.resourceMap)) {
-        let point: Point = JSON.parse(pointstr);
-        let point_geography = geography[point.x][point.y];
+        let point_geography = map_cache[pointstr].geography;
         // Building coming in subsequent feature.
         let final_production_type: string;
         let final_production_count: number = 0;
+        let building: Building | null = null;
+        if (pointstr in building_by_location) {
+            building = building_by_location[pointstr];
+        }
         for (let [production_type, work_strength] of Object.entries(effort)) {
-            let production = PRODUCE_MAP[production_type](work_strength, point_geography, {});
+            let production = PRODUCE_MAP[production_type](work_strength, point_geography, building);
             if (production > final_production_count) {
                 final_production_type = production_type;
                 final_production_count = production;
@@ -54,7 +57,7 @@ function get_single_draft_type(draft_map: ResourceMap, production_map: ResourceM
             // Guaranteed to have only one type in production_map
             let production_type_in_tile = Object.keys(production_map.resourceMap[pointstr])[0];
             if (production_type_in_tile == draft_type) {
-                draft_map.place_resource_with_position(pointstr, person.unique_id, draft_stat[1]); 
+                draft_map.place_resource_with_position(pointstr, person.unique_id, draft_stat[1]);
             }
         }
     }

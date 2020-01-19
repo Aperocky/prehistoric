@@ -58,7 +58,7 @@ export class Simulation {
         this.move_people();
         // Map logic (production, distribution on map scale)
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
-        this.production_map = SimUtil.create_production_map(this.effort_map, this.geography);
+        this.production_map = SimUtil.create_production_map(this.effort_map, this.map_cache, this.building_by_location, FIXED_MAP_SIZE);
         this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this.production_map, FIXED_MAP_SIZE);
         // People logic
         this.income_by_people = this.harvest();
@@ -182,11 +182,11 @@ export class Simulation {
         for (let person of Object.values(this.people)) {
             if (Object.keys(person.deficit).length > 0) {
                 for (let i = 0; i < PersonUtil.get_travel(person); i++) {
-                    PersonUtil.move_person(person, this.map_cache);
+                    PersonUtil.move_person(person, this.map_cache, this.building_by_location);
                 }
             } else {
                 for (let i = 0; i < PersonUtil.get_home(person); i++) {
-                    PersonUtil.move_person(person, this.map_cache);
+                    PersonUtil.move_person(person, this.map_cache, this.building_by_location);
                 }
             }
         }

@@ -28,7 +28,7 @@ export class BuildingUtil {
         building.age += 1
         let type_def: BuildingType = BUILDING_MAP[building.type];
         let maintenance_point = type_def.run_maintenance(building, people);
-        building.maintenance += maintenance_point;
+        building.maintenance += maintenance_point - type_def.maintenance_cost;
         if (building.maintenance < type_def.low_thresh) {
             return type_def.downgrade;
         }
@@ -98,12 +98,29 @@ const town: BuildingType = {
     low_thresh: 30,
     start_point: 100,
     high_thresh: 400,
-    upgrade: "TOWN",
+    upgrade: "CITY",
     downgrade: NIL,
     create_func: (people: Person[]): boolean => {
-        if (people.length > 10) {
+        if (people.length >= 10) {
             return true;
         }
+        return false;
+    }
+}
+
+const city: BuildingType = {
+    type: "CITY",
+    maintenance_cost: 8,
+    run_maintenance: (building: Building, people: Person[]): number => {
+        let new_maintenance = people.length * people.length / 32;
+        return new_maintenance;
+    },
+    low_thresh: 50,
+    start_point: 100,
+    high_thresh: 400,
+    upgrade: "CITY",
+    downgrade: "TOWN",
+    create_func: (people: Person[]): boolean => {
         return false;
     }
 }
@@ -111,4 +128,5 @@ const town: BuildingType = {
 const BUILDING_MAP = {
     "FARM": farm,
     "TOWN": town,
+    "CITY": city,
 }
