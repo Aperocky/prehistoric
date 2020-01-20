@@ -161,7 +161,7 @@ function displayLocationInfo() {
 // ---------------------------------------------------------------------------
 
 function listGeneralInfo() {
-    siminfobox.appendChild(WebUtil.addInfoField("# Click on person to see details..", "#999"));
+    siminfobox.appendChild(WebUtil.addInfoField("# Click on person or tile to see details..", "#999"));
     siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
     siminfobox.appendChild(WebUtil.addInfoField(`TOTAL POPULATION: ${Object.keys(simulation.people).length}`));
     WebUtil.splitLine(siminfobox);
@@ -171,8 +171,11 @@ function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("TOTAL WEALTH: "));
     WebUtil.objectToLines(siminfobox, simulation.get_wealth());
     WebUtil.splitLine(siminfobox);
-    siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: ")); 
-    WebUtil.objectToLines(siminfobox, simulation.get_composition());
+    siminfobox.appendChild(WebUtil.addInfoField("BUILDING COUNTER: "));
+    WebUtil.objectToLines(siminfobox, simulation.get_buildings());
+    WebUtil.splitLine(siminfobox);
+    siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: "));
+    WebUtil.objectToLines(siminfobox, simulation.get_composition(), DISPLAY_TYPE);
 }
 
 function listPersonAttributes(unique_id, full=true) {

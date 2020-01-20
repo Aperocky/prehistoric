@@ -303,6 +303,18 @@ export class Simulation {
         return wealth;
     }
 
+    get_buildings() : { [key: string]: number } {
+        let buildings: { [key: string]: number } = {};
+        for (let building of Object.values(this.building_by_location)) {
+            if (building.type in buildings) {
+                buildings[building.type] += 1;
+            } else {
+                buildings[building.type] = 1;
+            }
+        }
+        return buildings;
+    }
+
     get_composition() {
         let composition = {};
         for (let person of Object.values(this.people)) {

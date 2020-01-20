@@ -33,8 +33,11 @@ export function splitLine(siminfobox) {
     siminfobox.appendChild(addInfoField("=============================", "#999"));
 }
 
-export function objectToLines(siminfobox, target) {
+export function objectToLines(siminfobox, target, translate_dict: object | null = null) {
     for (let [key, value] of Object.entries(target)) {
+        if (translate_dict) {
+            key = translate_dict[key];
+        }
         siminfobox.appendChild(addInfoField(`${key}: ${value}`));
     }
 }
