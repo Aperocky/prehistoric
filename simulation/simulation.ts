@@ -214,7 +214,7 @@ export class Simulation {
             PersonUtil.add_income_to_store(person);
             PersonUtil.consume(person);
             // Life!
-            PersonUtil.run_change_func(person, this.map_cache);
+            PersonUtil.run_change_func(person, this);
             if (!(person.type == "MORT")) {
                 let new_person = PersonUtil.run_replicate_func(person);
                 if (new_person) {
@@ -313,19 +313,6 @@ export class Simulation {
             }
         }
         return buildings;
-    }
-
-    get_composition() {
-        let composition = {};
-        for (let person of Object.values(this.people)) {
-            let ptype = person.type;
-            if (ptype in composition) {
-                composition[ptype] += 1;
-            } else {
-                composition[ptype] = 1;
-            }
-        }
-        return composition;
     }
 
     get_location_info(pointstr: string) {

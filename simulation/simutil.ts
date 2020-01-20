@@ -10,6 +10,10 @@ export function create_effort_map(people: Person[], boundary: number): ResourceM
     for (let person of people) {
         let work_radius = PersonUtil.get_work_radius(person);
         let work_strength = PersonUtil.get_work_strength(person);
+        if (work_strength == 0) {
+            // For people who don't produce resource. (i.e. bandits, taxman, trader, police etc.)
+            continue;
+        }
         let person_type = person.type;
         let in_work_positions = ResourceMap.get_radius_position(person.x, person.y, work_radius);
         for (let position of in_work_positions) {
@@ -77,4 +81,96 @@ export function create_draft_map(people: Person[], production_map: ResourceMap, 
         }
     }
     return draft_map;
+}
+
+export type StatisticsReport = {
+    population: number;
+    average_age: number;
+    composition: { [ptype: string]: number };
+    total_income: { [resource: string]: number };
+    total_consumption: { [resource: string]: number };
+    total_wealth: { [resource: string]: number };
+}
+
+function get_composition(people: Person[]) : { [ptype: string]: number } {
+    let composition = {};
+    for (let person of people) {
+        let ptype = person.type;
+        if (ptype in composition) {
+            composition[ptype] += 1;
+        } else {
+            composition[ptype] = 1;
+        }
+    }
+    return composition;
+}
+
+function get_wealth(people: Person[]) : { [resource: string]: number } {
+    let wealth: { [key: string]: number } = {};
+    for (let person of people) {
+        let storage = person.store;
+        for (let [rtype, store] of Object.entries(storage)) {
+            if (rtype in wealth) {
+                wealth[rtype] += store;
+            } else {
+                wealth[rtype] = store;
+            }
+        }
+    }
+    return wealth;
+}
+
+function get_gdp(people: Person[]) : { [key: string]: number } {
+    let gdp: { [key: string]: number } = {};
+    for (let person of people) {
+        for (let [rtype, inc] of Object.entries(person.income)) {
+            if (rtype in gdp) {
+                gdp[rtype] += inc;
+            } else {
+                gdp[rtype] = inc;
+            }
+        }
+    }
+    return gdp;
+}
+
+function get_consumption(people: Person[]) : { [key: string]: number } {
+    let consumption: { [key: string]: number } = {};
+    for (let person of people) {
+        if (person.type == "MORT") {
+            continue;
+        }
+        for (let [rtype, cons] of Object.entries(PersonUtil.get_consumption(person))) {
+            if (rtype in consumption) {
+                consumption[rtype] += cons;
+            } else {
+                consumption[rtype] = cons;
+            }
+            if (rtype in person.deficit) {
+                consumption[rtype] -= person.deficit[rtype];
+            }
+        }
+    }
+    return consumption;
+}
+
+// To replace utility functions from simulation.ts
+export class BureauOfStatistics {
+
+    static generate_statistic_report(people: Person[]) : StatisticsReport {
+        let population = people.length;
+        let average_age = people.reduce((sum, p) => p.age + sum, 0) / population;
+        let composition = get_composition(people);
+        let total_income = get_gdp(people);
+        let total_wealth = get_wealth(people);
+        let total_consumption = get_consumption(people);
+        return {
+            population: population,
+            average_age: average_age,
+            composition: composition,
+            total_income: total_income,
+            total_consumption: total_consumption,
+            total_wealth: total_wealth,
+        }
+    }
 }

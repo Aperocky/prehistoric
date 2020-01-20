@@ -1,3 +1,8 @@
+import { StatisticsReport } from "../simulation/simutil";
+import { DISPLAY_TYPE } from "../simulation/person";
+import { Person } from "../simulation/person";
+import { Building } from "../simulation/buildings";
+
 export function clearDiv(div) {
     // Remove every zig
     while (div.firstChild) {
@@ -40,4 +45,52 @@ export function objectToLines(siminfobox, target, translate_dict: object | null 
         }
         siminfobox.appendChild(addInfoField(`${key}: ${value}`));
     }
+}
+
+export function visualizePeopleGroup(siminfobox, report: StatisticsReport) : void {
+    siminfobox.appendChild(addInfoField(`TOTAL POPULATION: ${report.population}`));
+    siminfobox.appendChild(addInfoField(`AVERAGE AGE: ${report.average_age}`));
+    splitLine(siminfobox);
+    siminfobox.appendChild(addInfoField(`TOTAL INCOME`));
+    objectToLines(siminfobox, report.total_income);
+    splitLine(siminfobox);
+    siminfobox.appendChild(addInfoField(`TOTAL CONSUMPTION`));
+    objectToLines(siminfobox, report.total_consumption);
+    splitLine(siminfobox);
+    siminfobox.appendChild(addInfoField("TOTAL WEALTH"));
+    objectToLines(siminfobox, report.total_wealth);
+    splitLine(siminfobox);
+    siminfobox.appendChild(addInfoField("COMPOSITION"));
+    objectToLines(siminfobox, report.composition, DISPLAY_TYPE);
+    splitLine(siminfobox);
+}
+
+export function visualizePerson(siminfobox, person: Person, detailed=true) : void {
+    if (detailed) {
+        siminfobox.appendChild(addInfoField(`Name: ${person.name}`));
+        siminfobox.appendChild(addInfoField(`Occupation: ${DISPLAY_TYPE[person.type]}`));
+        siminfobox.appendChild(addInfoField(`Age: ${person.age}`));
+        splitLine(siminfobox);
+        siminfobox.appendChild(addInfoField("Income: "))
+        objectToLines(siminfobox, person.income);
+        siminfobox.appendChild(addInfoField("Storage: "))
+        objectToLines(siminfobox, person.store);
+        if (person.eventlog) {
+            siminfobox.appendChild(addInfoField(`Message: ${person.eventlog}`));
+        }
+    } else {
+        siminfobox.appendChild(addInfoField(`${person.name}, ${DISPLAY_TYPE[person.type]}`));
+        siminfobox.appendChild(addInfoField("Age: " + person.age));
+        if (person.eventlog) {
+            siminfobox.appendChild(addInfoField(`Message: ${person.eventlog}`));
+        }
+        siminfobox.appendChild(addInfoField("--------------------------", "#999"));
+    }
+}
+
+export function visualizeBuilding(siminfobox, building: Building) {
+    siminfobox.appendChild(addInfoField(`Building: ${building.type}`))
+    siminfobox.appendChild(addInfoField(`Maintenance: ${building.maintenance}`))
+    siminfobox.appendChild(addInfoField(`History: ${building.age} years`))
+    splitLine(siminfobox);
 }

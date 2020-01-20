@@ -3,6 +3,7 @@ import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 import { ResourceMap } from "./map/informationMap";
 import { DISPLAY_TYPE } from "./simulation/person";
+import { BureauOfStatistics } from "./simulation/simutil";
 
 // Buttons
 const logButton = document.getElementById("logbut");
@@ -136,7 +137,7 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
 function emphasizePerson() {
     this.scale.set(1);
     WebUtil.clearDiv(siminfobox);
-    listPersonAttributes(this.name);
+    WebUtil.visualizePerson(siminfobox, simulation.people[this.name]);
 }
 
 function unEmphasizePerson() {
@@ -163,66 +164,38 @@ function displayLocationInfo() {
 function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person or tile to see details..", "#999"));
     siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
-    siminfobox.appendChild(WebUtil.addInfoField(`TOTAL POPULATION: ${Object.keys(simulation.people).length}`));
-    WebUtil.splitLine(siminfobox);
-    siminfobox.appendChild(WebUtil.addInfoField(`TOTAL PRODUCTION: `));
-    WebUtil.objectToLines(siminfobox, simulation.get_gdp());
-    WebUtil.splitLine(siminfobox);
-    siminfobox.appendChild(WebUtil.addInfoField("TOTAL WEALTH: "));
-    WebUtil.objectToLines(siminfobox, simulation.get_wealth());
-    WebUtil.splitLine(siminfobox);
     siminfobox.appendChild(WebUtil.addInfoField("BUILDING COUNTER: "));
     WebUtil.objectToLines(siminfobox, simulation.get_buildings());
-    WebUtil.splitLine(siminfobox);
-    siminfobox.appendChild(WebUtil.addInfoField("COMPOSITION: "));
-    WebUtil.objectToLines(siminfobox, simulation.get_composition(), DISPLAY_TYPE);
-}
-
-function listPersonAttributes(unique_id, full=true) {
-    if (full) {
-        siminfobox.appendChild(WebUtil.addInfoField("Name: " + simulation.people[unique_id].name));
-        siminfobox.appendChild(WebUtil.addInfoField("Occupation: " + DISPLAY_TYPE[simulation.people[unique_id].type]));
-        siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[unique_id].age));
-        siminfobox.appendChild(WebUtil.addInfoField("Income: " + JSON.stringify(simulation.people[unique_id].income)));
-        siminfobox.appendChild(WebUtil.addInfoField("Storage: " + JSON.stringify(simulation.people[unique_id].store)));
-        siminfobox.appendChild(WebUtil.addInfoField("Message: " + simulation.people[unique_id].eventlog));
-    } else {
-        siminfobox.appendChild(WebUtil.addInfoField("--------------------------", "#999"));
-        siminfobox.appendChild(WebUtil.addInfoField(`${simulation.people[unique_id].name}, ${DISPLAY_TYPE[simulation.people[unique_id].type]}`));
-        siminfobox.appendChild(WebUtil.addInfoField("Age: " + simulation.people[unique_id].age));
-        siminfobox.appendChild(WebUtil.addInfoField(simulation.people[unique_id].eventlog));
-    }
+    let report = BureauOfStatistics.generate_statistic_report(Object.values(simulation.people));
+    WebUtil.visualizePeopleGroup(siminfobox, report);
 }
 
 function listLocationInfo(pointstr) {
+    // Display general information
     let location_info = simulation.get_location_info(pointstr);
     siminfobox.appendChild(WebUtil.addInfoField("Location: " + pointstr));
-    siminfobox.appendChild(WebUtil.addInfoField("Resource: " + (location_info["resource"] ? location_info["resource"] + ", " + location_info["count"] : "None")));
-    siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
+    siminfobox.appendChild(WebUtil.addInfoField("Production: " + (location_info["resource"] ? location_info["resource"] + ", " + location_info["count"] : "None")));
+    WebUtil.splitLine(siminfobox);
+    // Display building information
     if (simulation.building_by_location[pointstr]) {
-        siminfobox.appendChild(WebUtil.addInfoField(`Building: ${simulation.building_by_location[pointstr].type}`))
-        siminfobox.appendChild(WebUtil.addInfoField(`Maintenance: ${simulation.building_by_location[pointstr].maintenance}`))
-        siminfobox.appendChild(WebUtil.addInfoField(`History: ${simulation.building_by_location[pointstr].age} years`))
-        siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
+        WebUtil.visualizeBuilding(siminfobox, simulation.building_by_location[pointstr]);
     }
+    // Display the population.
     let population = 0;
     if (pointstr in simulation.people_by_location) {
         population = simulation.people_by_location[pointstr].length;
     }
-    siminfobox.appendChild(WebUtil.addInfoField("Population: " + population));
     if (population > 0) {
+        let report = BureauOfStatistics.generate_statistic_report(simulation.people_by_location[pointstr]);
+        WebUtil.visualizePeopleGroup(siminfobox, report);
         for (let person of simulation.people_by_location[pointstr]) {
-            listPersonAttributes(person.unique_id, false);
+            WebUtil.visualizePerson(siminfobox, person, false);
         }
     }
+    // Display draft information
     if ("draft" in location_info) {
-        siminfobox.appendChild(WebUtil.addInfoField("==========================", "#999"));
-        siminfobox.appendChild(WebUtil.addInfoField("People who draft resource from here: "));
-        for (let [pid, draft] of Object.entries(location_info["draft"])) {
-            let person_name = simulation.people[pid].name;
-            let person_type = simulation.people[pid].type;
-            siminfobox.appendChild(WebUtil.addInfoField(person_name + ", " + DISPLAY_TYPE[person_type]));
-        }
+        let draft_count = Object.keys(location_info["draft"]).length;
+        siminfobox.appendChild(WebUtil.addInfoField(`${draft_count} people draft resources from here.`));
     }
 }
 

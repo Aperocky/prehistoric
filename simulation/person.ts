@@ -212,14 +212,17 @@ const fisher: PersonType = {
     consumption: {
         FOOD : 0.5
     },
-    change_func: (person, map_cache) => {
+    change_func: (person, simulation) => {
         let point = ResourceMap.pointToStr(person.x, person.y);
         // This fisher has travelled inland and can no longer fish.
-        if (!map_cache[point].isCoast) {
+        if (!simulation.map_cache[point].isCoast) {
+            if (simulation.building_by_location[point] && simulation.building_by_location[point].type == "FARM") {
+                return "FARM";
+            }
             return "HUNT";
         }
         // 5% chance to just become hunter because 'Rebellion' while young
-        if (Math.random() < 0.05 && person.age < 40) {
+        if (Math.random() < 0.03 && person.age < 40) {
             return "HUNT";
         }
         return NO_CHANGE;
@@ -244,14 +247,14 @@ const hunter: PersonType = {
     consumption: {
         FOOD : 0.5
     },
-    change_func: (person, map_cache) => {
+    change_func: (person, simulation) => {
         if ("FOOD" in person.deficit || person.income["FOOD"] < 0.4) {
             let point = ResourceMap.pointToStr(person.x, person.y);
-            if (map_cache[point].isCoast && Math.random() < 0.8) {
+            if (simulation.map_cache[point].isCoast && Math.random() < 0.8) {
                 return "FISH";
             }
             // not everyone wants to farm even when hungry.
-            if (map_cache[point].geography == 2 && Math.random() < 0.2) {
+            if (simulation.map_cache[point].geography == 2 && Math.random() < 0.2) {
                 return "FARM";
             }
         }
@@ -277,7 +280,7 @@ const farmer: PersonType = {
     consumption: {
         FOOD : 0.4
     },
-    change_func: (person, map_cache) => {
+    change_func: (person, simulation) => {
         // 2% chance to just become hunter because 'Rebellion' while young
         if (Math.random() < 0.02 && person.age < 40) {
             return "HUNT";
@@ -289,6 +292,33 @@ const farmer: PersonType = {
     },
     replicate_cost: {
         FOOD : 1.5
+    }
+}
+
+const trader: PersonType = {
+    type: "TRAD",
+    travel: 5,
+    home: 0,
+    work_strength: 3, // Create money in town
+    work_radius: 0,
+    draft: {
+        GOLD: [0, 8],
+    },
+    consumption: {
+        FOOD : 0.5
+    },
+    change_func: (person, simulation) => {
+        // 2% chance to just become gatherer because 'Rebellion' while young
+        if (Math.random() < 0.02 && person.age < 30) {
+            return "HUNT";
+        }
+        return NO_CHANGE;
+    },
+    replicate_func: (person) => {
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+    },
+    replicate_cost: {
+        FOOD : 2,
     }
 }
 
