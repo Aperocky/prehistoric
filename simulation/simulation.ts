@@ -182,11 +182,11 @@ export class Simulation {
         for (let person of Object.values(this.people)) {
             if (Object.keys(person.deficit).length > 0) {
                 for (let i = 0; i < PersonUtil.get_travel(person); i++) {
-                    PersonUtil.move_person(person, this.map_cache, this.building_by_location);
+                    PersonUtil.move_person(person, this);
                 }
             } else {
                 for (let i = 0; i < PersonUtil.get_home(person); i++) {
-                    PersonUtil.move_person(person, this.map_cache, this.building_by_location);
+                    PersonUtil.move_person(person, this);
                 }
             }
         }
@@ -272,35 +272,6 @@ export class Simulation {
             }
         }
         return result;
-    }
-
-    get_gdp() : { [key: string]: number } {
-        let gdp: { [key: string]: number } = {};
-        for (let income of Object.values(this.income_by_people)) {
-            for (let [rtype, inc] of Object.entries(income)) {
-                if (rtype in gdp) {
-                    gdp[rtype] += inc;
-                } else {
-                    gdp[rtype] = inc;
-                }
-            }
-        }
-        return gdp;
-    }
-
-    get_wealth() : { [key: string]: number } {
-        let wealth: { [key: string]: number } = {};
-        for (let person of Object.values(this.people)) {
-            let storage = person.store;
-            for (let [rtype, store] of Object.entries(storage)) {
-                if (rtype in wealth) {
-                    wealth[rtype] += store;
-                } else {
-                    wealth[rtype] = store;
-                }
-            }
-        }
-        return wealth;
     }
 
     get_buildings() : { [key: string]: number } {

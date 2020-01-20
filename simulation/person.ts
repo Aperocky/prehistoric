@@ -30,23 +30,28 @@ export type Person = {
 
 export class PersonUtil {
 
-    static move_person(person: Person, map_cache, building_by_location): void {
+    static move_person(person: Person, simulation): void {
         let north = ResourceMap.pointToStr(person.x, person.y + 1);
         let south = ResourceMap.pointToStr(person.x, person.y - 1);
         let west = ResourceMap.pointToStr(person.x + 1, person.y);
         let east = ResourceMap.pointToStr(person.x - 1, person.y);
-        let decision: string = [north, east, west, south][Math.floor(Math.random()*4)];
-        let building = building_by_location[decision];
-        if (decision in map_cache && map_cache[decision].geography > 0) {
-            if (building) {
-                if (building.type == "FARM" && person.type == "HUNT") {
-                    // Hunter may not enter farms.
-                    return;
+        let tries = 0;
+        while (tries < 3) {
+            tries += 1;
+            let decision: string = [north, east, west, south][Math.floor(Math.random()*4)];
+            let building = simulation.building_by_location[decision];
+            if (decision in simulation.map_cache && simulation.map_cache[decision].geography > 0) {
+                if (building) {
+                    if (building.type == "FARM" && person.type == "HUNT") {
+                        // gatherer may not enter farms.
+                        continue;
+                    }
                 }
+                let newloc: Point = JSON.parse(decision);
+                person.x = newloc.x;
+                person.y = newloc.y;
+                return;
             }
-            let newloc: Point = JSON.parse(decision);
-            person.x = newloc.x;
-            person.y = newloc.y;
         }
     }
 
@@ -275,7 +280,7 @@ const farmer: PersonType = {
     work_strength: 1,
     work_radius: 0,
     draft: {
-        FOOD: [0, 8]
+        FOOD: [0, 10]
     },
     consumption: {
         FOOD : 0.4
