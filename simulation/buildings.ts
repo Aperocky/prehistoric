@@ -78,7 +78,7 @@ const farm: BuildingType = {
     start_point: 50,
     high_thresh: 200,
     upgrade: "FARM",
-    downgrade: NIL,
+    downgrade: "NONE",
     create_func: (people: Person[]): boolean => {
         let farmer_count = people.filter(p => p.type == "FARM").length;
         if (farmer_count > 4) {

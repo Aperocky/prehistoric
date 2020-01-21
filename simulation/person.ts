@@ -12,6 +12,7 @@ export const DISPLAY_TYPE = {
     HUNT: "gatherer",
     FARM: "farmer",
     FISH: "fisher",
+    TRAD: "trader",
     MORT: "deceased",
 }
 
@@ -26,6 +27,18 @@ export type Person = {
     unique_id: string;
     eventlog: string;
     age: number;
+    // Market economy below
+    surplus: { [resource: string] : number };
+    demand: { [resource: string] : number };
+    budget: { [resource: string] : number };
+}
+
+function add_value(obj: object, key: string, val: number) : void {
+    if (key in obj) {
+        obj[key] += val;
+    } else {
+        obj[key] = val;
+    }
 }
 
 export class PersonUtil {
@@ -165,6 +178,9 @@ export class PersonUtil {
             unique_id: uuid(),
             eventlog: "",
             age: 0,
+            surplus: {},
+            demand: {},
+            budget: {},
         }
         for (let [rtype, rcost] of Object.entries(replicate_cost)) {
             person.store[rtype] -= rcost;
@@ -189,6 +205,88 @@ export class PersonUtil {
         }
         return null;
     }
+
+    static get_surplus_resources(person: Person) : { [resource: string] : number } {
+        let surplus : { [resource: string] : number } = {};
+        // Mark all over 10x of yearly consumption as for sale.
+        for (let [rtype, rcount] of Object.entries(person.store)) {
+            if (rtype == "GOLD") {
+                continue; // DUH
+            }
+            if (rtype in PersonUtil.get_consumption(person)) {
+                let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 10;
+                if (currplus > 0) {
+                    surplus[rtype] = currplus; // Portion of store more than 10 years
+                }
+            } else {
+                surplus[rtype] = rcount; // All of it, since it's not needed
+            }
+        }
+        // Mark all income over 50% yearly consumption for sale.
+        for (let [rtype, rcount] of Object.entries(person.income)) {
+            if (rtype == "GOLD") {
+                continue; // DUH
+            }
+            if (rtype in PersonUtil.get_consumption(person)) {
+                let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 1.5;
+                if (currplus > 0) {
+                    add_value(surplus, rtype, currplus);
+                }
+            } else {
+                // This person doesn't actually need this resource, mark all for sale
+                add_value(surplus, rtype, rcount);
+            }
+        }
+        return surplus;
+    }
+
+    // Amount that would be preferably bought.
+    static get_demand_resources(person: Person) : { [resource: string] : number } {
+        let demand : { [resource: string] : number } = {};
+        // Demand for things without 5 years supply and up to 50% more than consumption
+        for (let [rtype, rcount] of Object.entries(PersonUtil.get_consumption(person))) {
+            if (rtype == "GOLD") {
+                continue; // DUH
+            }
+            if (rtype in person.store) {
+                let demandMultiplier = 1.2 - person.store[rtype]/(rcount*10);
+                demandMultiplier = demandMultiplier < 0 ? 0 : demandMultiplier;
+                let rawDemand = rcount * 1.5;
+                if (rtype in person.income) {
+                    rawDemand -= person.income[rtype];
+                }
+                rawDemand = rawDemand > 0 ? rawDemand : 0;
+                if (rawDemand == 0) {
+                    return {}; // This spare subsequent calculations
+                }
+                demand[rtype] = rawDemand * demandMultiplier;
+            } else {
+                demand[rtype] = rcount * 1.5;
+            }
+        }
+        return demand;
+    }
+
+    static get_available_budget(person: Person) : { [resource: string] : number } {
+        let budget : { [resource: string] : number } = {};
+        let credit_line: number = person.store["GOLD"] ? person.store["GOLD"] : 0;
+        if (credit_line == 0) { return {}; }
+        if ("FOOD" in person.deficit) {
+            // Mortal danger, all gold goes to food.
+            budget["FOOD"] = credit_line;
+            return budget;
+        }
+        // Willing to spend demand/consumption*0.5 of all gold on deficits.
+        // Since there can be multiple resources, the potential budget is larger than store
+        // But that's fine since this is not an distributing function
+        // Market economy at work baby!
+        for (let [rtype, rcount] of Object.entries(person.demand)) {
+            let consumption = PersonUtil.get_consumption(person)[rtype];
+            let spendVal = rcount/consumption * 0.5 * credit_line;
+            budget[rtype] = spendVal;
+        }
+        return budget;
+    }
 }
 
 type PersonType = {
@@ -212,13 +310,23 @@ const fisher: PersonType = {
     work_strength: 0.3,
     work_radius: 1.5,
     draft: {
-        FOOD: [1.5, 1]
+        FOOD: [1.5, 1],
+        GOLD: [2, 1]
     },
     consumption: {
         FOOD : 0.5
     },
     change_func: (person, simulation) => {
         let point = ResourceMap.pointToStr(person.x, person.y);
+        if (simulation.building_by_location[point]) {
+            let building = simulation.building_by_location[point];
+            if (building.type == "TOWN" && Math.random() < 0.02) {
+                return "TRAD";
+            }
+            if (building.type == "CITY" && Math.random() < 0.05) {
+                return "TRAD";
+            }
+        }
         // This fisher has travelled inland and can no longer fish.
         if (!simulation.map_cache[point].isCoast) {
             if (simulation.building_by_location[point] && simulation.building_by_location[point].type == "FARM") {
@@ -247,14 +355,24 @@ const hunter: PersonType = {
     work_strength: 0.2,
     work_radius: 1.5,
     draft: {
-        FOOD: [1.5, 1]
+        FOOD: [1.5, 1],
+        GOLD: [2.5, 1]
     },
     consumption: {
         FOOD : 0.5
     },
     change_func: (person, simulation) => {
+        let point = ResourceMap.pointToStr(person.x, person.y);
+        if (simulation.building_by_location[point]) {
+            let building = simulation.building_by_location[point];
+            if (building.type == "TOWN" && Math.random() < 0.05) {
+                return "TRAD";
+            }
+            if (building.type == "CITY" && Math.random() < 0.1) {
+                return "TRAD";
+            }
+        }
         if ("FOOD" in person.deficit || person.income["FOOD"] < 0.4) {
-            let point = ResourceMap.pointToStr(person.x, person.y);
             if (simulation.map_cache[point].isCoast && Math.random() < 0.8) {
                 return "FISH";
             }
@@ -280,7 +398,8 @@ const farmer: PersonType = {
     work_strength: 1,
     work_radius: 0,
     draft: {
-        FOOD: [0, 10]
+        FOOD: [0, 10],
+        GOLD: [1.5, 1]
     },
     consumption: {
         FOOD : 0.4
@@ -307,10 +426,11 @@ const trader: PersonType = {
     work_strength: 3, // Create money in town
     work_radius: 0,
     draft: {
-        GOLD: [0, 8],
+        GOLD: [0, 15],
     },
     consumption: {
-        FOOD : 0.5
+        GOLD : 0.5,
+        FOOD : 0.5,
     },
     change_func: (person, simulation) => {
         // 2% chance to just become gatherer because 'Rebellion' while young
@@ -331,6 +451,7 @@ const TYPE_MAP = {
     "HUNT" : hunter,
     "FARM" : farmer,
     "FISH" : fisher,
+    "TRAD" : trader,
 }
 
 const deficit_complaints_map = {

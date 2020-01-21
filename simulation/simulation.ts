@@ -2,6 +2,7 @@ import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap, createMapCache, LocalInformation } from "../map/informationMap";
 import { Person, PersonUtil } from "./person";
 import { Building, BuildingUtil } from "./buildings";
+import { MarketConditions, get_supply_and_demand, do_business } from "./market";
 import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./simutil";
 
@@ -24,6 +25,7 @@ export class Simulation {
     income_by_people : { [key: string] : { [key: string] : number }};
     people_by_location : { [key: string] : Person[] };
     building_by_location : { [key: string] : Building };
+    market_conditions: MarketConditions;
 
     generate() {
         console.log("Refreshing map");
@@ -40,6 +42,13 @@ export class Simulation {
         this.people_by_location = {};
         this.log_queue = [];
         this.building_by_location = {};
+        this.market_conditions = {
+            supply: {},
+            demand: {},
+            liquidity: {},
+            pricing: {},
+            activity: {},
+        } // Dummy
     }
 
     // State update function
@@ -60,9 +69,13 @@ export class Simulation {
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.map_cache, this.building_by_location, FIXED_MAP_SIZE);
         this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this.production_map, FIXED_MAP_SIZE);
-        // People logic
+        // The means of production
         this.income_by_people = this.harvest();
         this.distribute();
+        this.market_conditions = get_supply_and_demand(Object.values(this.people));
+        console.log(this.market_conditions);
+        do_business(Object.values(this.people), this.market_conditions);
+        // Life
         this.commence_life();
         this.people_by_location = this.get_people_for_show();
         // Building logic
@@ -113,7 +126,10 @@ export class Simulation {
                 name: PersonUtil.get_random_full_name(),
                 unique_id: uuid(),
                 eventlog: "",
-                age: 10,
+                age: Math.floor(Math.random()*20+10),
+                surplus: {},
+                demand: {},
+                budget: {},
             }
             this.people[person.unique_id] = person;
         }
@@ -180,7 +196,9 @@ export class Simulation {
 
     move_people() {
         for (let person of Object.values(this.people)) {
-            if (Object.keys(person.deficit).length > 0) {
+            // Refresh event log
+            person.eventlog = "";
+            if ("FOOD" in person.deficit) {
                 for (let i = 0; i < PersonUtil.get_travel(person); i++) {
                     PersonUtil.move_person(person, this);
                 }
@@ -207,8 +225,6 @@ export class Simulation {
     commence_life() {
         console.log("people count: " + Object.values(this.people).length);
         for (let person of Object.values(this.people)) {
-            // Refresh event log
-            person.eventlog = "";
             // Movements!
             person.age += 1;
             PersonUtil.add_income_to_store(person);

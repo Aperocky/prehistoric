@@ -18,6 +18,7 @@ const app = new PIXI.Application({
 });
 let gamezone = document.getElementById("mapspace");
 gamezone.appendChild(app.view);
+app.renderer.plugins.interaction.autoPreventDefault = false;
 
 // ---------------------------------------------------------------------------
 // Load resources for map, initiate persisting variables
@@ -68,6 +69,7 @@ const people_color_type = {
     FISH: 0x005e5e,
     FARM: 0x808040,
     MORT: 0x666666,
+    TRAD: 0x902090,
 }
 
 // Fix texture to prevent memory leak
@@ -76,6 +78,7 @@ const people_texture = {
     FISH: getPeopleTexture(people_color_type["FISH"]),
     FARM: getPeopleTexture(people_color_type["FARM"]),
     MORT: getPeopleTexture(people_color_type["MORT"]),
+    TRAD: getPeopleTexture(people_color_type["TRAD"]),
 }
 
 // ---------------------------------------------------------------------------
@@ -164,17 +167,21 @@ function displayLocationInfo() {
 function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person or tile to see details..", "#999"));
     siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
-    siminfobox.appendChild(WebUtil.addInfoField("BUILDING COUNTER: "));
-    WebUtil.objectToLines(siminfobox, simulation.get_buildings());
+    // Display Market information
+    WebUtil.splitLine(siminfobox);
+    WebUtil.visualizeMarketCondition(siminfobox, simulation.market_conditions);
+    siminfobox.appendChild(WebUtil.addInfoField("General Information: ", "#b2b"));
     let report = BureauOfStatistics.generate_statistic_report(Object.values(simulation.people));
     WebUtil.visualizePeopleGroup(siminfobox, report);
+    siminfobox.appendChild(WebUtil.addInfoField("Civil Buildings: ", "#bb3"));
+    WebUtil.objectToLines(siminfobox, simulation.get_buildings());
 }
 
 function listLocationInfo(pointstr) {
     // Display general information
     let location_info = simulation.get_location_info(pointstr);
     siminfobox.appendChild(WebUtil.addInfoField("Location: " + pointstr));
-    siminfobox.appendChild(WebUtil.addInfoField("Production: " + (location_info["resource"] ? location_info["resource"] + ", " + location_info["count"] : "None")));
+    siminfobox.appendChild(WebUtil.addInfoField("Local Production: " + (location_info["resource"] ? location_info["resource"] + ", " + location_info["count"] : "None")));
     WebUtil.splitLine(siminfobox);
     // Display building information
     if (simulation.building_by_location[pointstr]) {

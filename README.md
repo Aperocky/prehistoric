@@ -10,12 +10,30 @@ The total sum of strength for each type of production is then turned into produc
 
 each person issue draft of resources to a number of area. These draft are then pooled together, the total production of that area are then distributed according to draft strength. This design allows non-resource producer to also get a slice of the pie. (i.e. bandits)
 
-When enough people of certain kind get together, buildings are created.
+When enough people of certain kind get together, buildings are created. Maintenance are used to determine it could upgrade, or downgrade.
+
+### Market
+---
+
+Traders produce gold (or fiat currency, whatever, the inflation is huge), it is used to conduct trade.
+
+Each person produce supply, demand and budget based on current stock, desired consumption and gold available.
+
+It is then pooled together to create a market, prices can be extremely volatile!
 
 ## TODO
 
-Add types (bandit, police, trader)
+Add types
 
-Add resources (Currently food is the only resource)
+Coming soon:
 
-Create market mechanism as a second mechanism to distribute production (probably incorporate new resource type gold). So people don't need to rob food from others or have to create food survive.
+    Offshore fisher
+
+    Potter
+
+Add resources:
+
+    Pots
+
+Potentially create human intervention in form of government types and functions. Thinking of introducing taxman, bandits, and player decision on subsidies in next few iterations.
+
