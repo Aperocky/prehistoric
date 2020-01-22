@@ -1,4 +1,4 @@
-A map generator that aspire to also be simulating people and civilizations.
+A map generator that simulates people and early civilizations. Oh, and inflation.
 
 http://aperocky.com/prehistoric
 
@@ -23,9 +23,11 @@ It is then pooled together to create a market, prices can be extremely volatile!
 
 ## TODO
 
-Add types
+Named cities
 
-Coming soon:
+More reporting, a ranked wealth of cities and individuals.
+
+Types Coming soon:
 
     Offshore fisher
 
