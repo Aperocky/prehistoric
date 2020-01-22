@@ -14,10 +14,10 @@ export function create_effort_map(people: Person[], boundary: number): ResourceM
             // For people who don't produce resource. (i.e. bandits, taxman, trader, police etc.)
             continue;
         }
-        let person_type = person.type;
+        let production_type = PersonUtil.get_production_type(person);
         let in_work_positions = ResourceMap.get_radius_position(person.x, person.y, work_radius);
         for (let position of in_work_positions) {
-            effort_map.place_resource(position.x, position.y, person_type, work_strength);
+            effort_map.place_resource(position.x, position.y, production_type, work_strength);
         }
     }
     return effort_map;

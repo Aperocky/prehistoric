@@ -65,11 +65,12 @@ const building_to_texture_map = {
 }
 
 const people_color_type = {
-    HUNT: 0x023220,
+    HUNT: 0x033725,
     FISH: 0x005e5e,
     FARM: 0x808040,
     MORT: 0x666666,
     TRAD: 0x902090,
+    WHAL: 0x0020ab,
 }
 
 // Fix texture to prevent memory leak
@@ -79,6 +80,7 @@ const people_texture = {
     FARM: getPeopleTexture(people_color_type["FARM"]),
     MORT: getPeopleTexture(people_color_type["MORT"]),
     TRAD: getPeopleTexture(people_color_type["TRAD"]),
+    WHAL: getPeopleTexture(people_color_type["WHAL"]),
 }
 
 // ---------------------------------------------------------------------------
@@ -268,7 +270,9 @@ function createBuildingSprite(): void {
         let point = JSON.parse(pointstr);
         let buildingSprite = getSprite(building_to_texture_map[building.type]);
         buildingSprite.name = building.type;
-        buildingSprite.scale.set(0.75) // Don't take up whole tile, that's ugly
+        if (building.type == "CITY") {
+            buildingSprite.scale.set(0.75) // Don't take up whole tile, that's ugly
+        }
         buildingSprite.x = point.x * SPRITE_SIZE;
         buildingSprite.y = point.y * SPRITE_SIZE;
         buildingSprites[pointstr] = buildingSprite;

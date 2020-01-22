@@ -70,7 +70,7 @@ export function visualizePeopleGroup(siminfobox, report: StatisticsReport) : voi
     siminfobox.appendChild(addInfoField(`Total Population: ${report.population}`));
     siminfobox.appendChild(addInfoField(`Average Age: ${report.average_age}`));
     splitLine(siminfobox);
-    siminfobox.appendChild(addInfoField(`Total Production: `));
+    siminfobox.appendChild(addInfoField(`Total Income: `));
     objectToLines(siminfobox, report.total_income);
     splitLine(siminfobox);
     siminfobox.appendChild(addInfoField(`Total Consumption`));

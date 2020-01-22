@@ -13,6 +13,7 @@ export const DISPLAY_TYPE = {
     FARM: "farmer",
     FISH: "fisher",
     TRAD: "trader",
+    WHAL: "whaler",
     MORT: "deceased",
 }
 
@@ -124,6 +125,10 @@ export class PersonUtil {
         return typedef.work_strength;
     }
 
+    static get_production_type(person: Person) {
+        return PRODUCTION_TYPE_MAP[person.type];
+    }
+
     static get_travel(person: Person) {
         let typedef = PersonUtil.get_type_def(person);
         return typedef.travel;
@@ -173,7 +178,7 @@ export class PersonUtil {
             income: {},
             deficit: {},
             store: {},
-            type: person.type,
+            type: BIRTH_TYPE_MAP[person.type],
             name: PersonUtil.get_random_name(false) + " " + surname,
             unique_id: uuid(),
             eventlog: "",
@@ -320,11 +325,23 @@ const fisher: PersonType = {
         let point = ResourceMap.pointToStr(person.x, person.y);
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
-            if (building.type == "TOWN" && Math.random() < 0.02) {
-                return "TRAD";
-            }
-            if (building.type == "CITY" && Math.random() < 0.05) {
-                return "TRAD";
+            if (person.age > 15) {
+                if (building.type == "TOWN") {
+                    if (Math.random() < 0.05) {
+                        return "WHAL";
+                    }
+                    if (Math.random() < 0.02) {
+                        return "TRAD";
+                    }
+                }
+                if (building.type == "CITY") {
+                    if (Math.random() < 0.1) {
+                        return "WHAL";
+                    }
+                    if (Math.random() < 0.05) {
+                        return "TRAD";
+                    }
+                }
             }
         }
         // This fisher has travelled inland and can no longer fish.
@@ -365,11 +382,13 @@ const hunter: PersonType = {
         let point = ResourceMap.pointToStr(person.x, person.y);
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
-            if (building.type == "TOWN" && Math.random() < 0.05) {
-                return "TRAD";
-            }
-            if (building.type == "CITY" && Math.random() < 0.1) {
-                return "TRAD";
+            if (person.age > 15) {
+                if (building.type == "TOWN" && Math.random() < 0.05) {
+                    return "TRAD";
+                }
+                if (building.type == "CITY" && Math.random() < 0.1) {
+                    return "TRAD";
+                }
             }
         }
         if ("FOOD" in person.deficit || person.income["FOOD"] < 0.4) {
@@ -447,11 +466,52 @@ const trader: PersonType = {
     }
 }
 
+const whaler: PersonType = {
+    type: "WHAL",
+    travel: 2,
+    home: 0,
+    work_strength: 0.15,
+    work_radius: 3.3,
+    draft: {
+        FOOD: [3.3, 0.3],
+    },
+    consumption: {
+        FOOD : 0.6,
+    },
+    change_func: (person, simulation) => {
+        // Whaler is an earned distinction, the birth type is fisher. Once whaler, forever whaler.
+        return NO_CHANGE;
+    },
+    replicate_func: (person) => {
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+    },
+    replicate_cost: {
+        FOOD : 2,
+    }
+}
+
 const TYPE_MAP = {
     "HUNT" : hunter,
     "FARM" : farmer,
     "FISH" : fisher,
     "TRAD" : trader,
+    "WHAL" : whaler,
+}
+
+const PRODUCTION_TYPE_MAP = {
+    HUNT: "HUNT",
+    FARM: "FARM",
+    FISH: "FISH",
+    TRAD: "TRAD",
+    WHAL: "FISH",
+}
+
+const BIRTH_TYPE_MAP = {
+    HUNT: "HUNT",
+    FARM: "FARM",
+    FISH: "FISH",
+    TRAD: "TRAD",
+    WHAL: "FISH",
 }
 
 const deficit_complaints_map = {

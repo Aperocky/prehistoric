@@ -45,20 +45,20 @@ export class BuildingUtil {
     }
 
     static create_building(pointstr: string, people: Person[]): Building | null {
-        if (farm.create_func(people)) {
-            let point: Point = JSON.parse(pointstr);
-            return {
-                type: "FARM",
-                age: 0,
-                maintenance: farm.start_point,
-            }
-        }
         if (town.create_func(people)) {
             let point: Point = JSON.parse(pointstr);
             return {
                 type: "TOWN",
                 age: 0,
                 maintenance: town.start_point,
+            }
+        }
+        if (farm.create_func(people)) {
+            let point: Point = JSON.parse(pointstr);
+            return {
+                type: "FARM",
+                age: 0,
+                maintenance: farm.start_point,
             }
         }
         return null;
@@ -72,6 +72,7 @@ const farm: BuildingType = {
         let farmer_count = people.filter(p => p.type == "FARM").length;
         let other_count = people.length - farmer_count;
         let new_maintenance = farmer_count - other_count;
+        new_maintenance -= people.length/2;
         return new_maintenance;
     },
     low_thresh: 30,
@@ -81,7 +82,7 @@ const farm: BuildingType = {
     downgrade: "NONE",
     create_func: (people: Person[]): boolean => {
         let farmer_count = people.filter(p => p.type == "FARM").length;
-        if (farmer_count > 4) {
+        if (farmer_count > 3) {
             return true;
         }
         return false;
