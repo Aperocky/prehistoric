@@ -3,7 +3,6 @@ import { Point } from "./mapUtil";
 export type LocalInformation = {
     geography: number;
     isCoast: boolean;
-    building: string;
 }
 
 export class ResourceMap {
@@ -87,7 +86,6 @@ export function createMapCache(geography: number[][]) : { [location: string] : L
             let local: LocalInformation = {
                 geography: terrainType,
                 isCoast: false,
-                building: "",
             }
             result[location] = local;
         }

@@ -73,7 +73,6 @@ export class Simulation {
         this.income_by_people = this.harvest();
         this.distribute();
         this.market_conditions = get_supply_and_demand(Object.values(this.people));
-        console.log(this.market_conditions);
         do_business(Object.values(this.people), this.market_conditions);
         // Life
         this.commence_life();

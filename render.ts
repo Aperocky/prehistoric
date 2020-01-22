@@ -43,7 +43,6 @@ const publicRenderer = PIXI.RenderTexture.create();
 // Stateful variables that need to exist outside functions
 let peopleSprites: PIXI.Sprite[];
 let buildingSprites: { [key: string]: PIXI.Sprite };
-let map_sprite_state = {};
 let people_shown = true;
 
 const textureMap = {
@@ -154,12 +153,7 @@ function unEmphasizePerson() {
 function displayLocationInfo() {
     WebUtil.clearDiv(siminfobox);
     let pointstr = this.name;
-    if (!map_sprite_state[pointstr]) {
-        listLocationInfo(pointstr);
-    } else {
-        listGeneralInfo();
-    }
-    map_sprite_state[pointstr] = !map_sprite_state[pointstr];
+    listLocationInfo(pointstr);
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +285,6 @@ function generateContainer(): void {
         for (let j = 0; j < FIXED_MAP_SIZE; j++) {
             let terrainSprite = getSprite(terrainMap[i][j]);
             terrainSprite.name = ResourceMap.pointToStr(i, j);
-            map_sprite_state[terrainSprite.name] = false;
             terrainSprite.x = i * SPRITE_SIZE;
             terrainSprite.y = j * SPRITE_SIZE;
             terrainSprite.interactive = true;

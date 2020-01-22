@@ -325,7 +325,18 @@ const fisher: PersonType = {
         let point = ResourceMap.pointToStr(person.x, person.y);
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
-            if (person.age > 15) {
+            if (person.age >= 15) {
+                const get_random_position = () => Math.floor(Math.random() * simulation.geography.length);
+                if ("FOOD" in person.deficit) {
+                    let randomX = get_random_position();
+                    let randomY = get_random_position();
+                    let random_point = ResourceMap.pointToStr(randomX, randomY);
+                    if (simulation.map_cache[random_point].isCoast) {
+                        person.x = randomX;
+                        person.y = randomY;
+                        person.eventlog += "She has sailed away from her old town to here. ";
+                    }
+                }
                 if (building.type == "TOWN") {
                     if (Math.random() < 0.05) {
                         return "WHAL";
@@ -480,6 +491,18 @@ const whaler: PersonType = {
     },
     change_func: (person, simulation) => {
         // Whaler is an earned distinction, the birth type is fisher. Once whaler, forever whaler.
+        // However, ths guy can sail
+        const get_random_position = () => Math.floor(Math.random() * simulation.geography.length);
+        if ("FOOD" in person.deficit) {
+            let randomX = get_random_position();
+            let randomY = get_random_position();
+            let random_point = ResourceMap.pointToStr(randomX, randomY);
+            if (simulation.map_cache[random_point].isCoast) {
+                person.x = randomX;
+                person.y = randomY;
+                person.eventlog += "She has sailed away from her old town to here. ";
+            }
+        }
         return NO_CHANGE;
     },
     replicate_func: (person) => {
