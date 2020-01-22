@@ -324,7 +324,7 @@ function runContainer(): void {
     }
     WebUtil.clearDiv(siminfobox);
     if (!people_shown) {
-        toggleShowButton();
+        togglePeopleSprites(false);
     }
     listGeneralInfo();
 }
