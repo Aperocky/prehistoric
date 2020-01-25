@@ -164,7 +164,7 @@ export class TerrainMap {
         } else {
             if (precip < 2) {
                 return Terrain.Barren;
-            } else if (precip < 2.75) {
+            } else if (precip < 2.6) {
                 return Terrain.Grassland;
             } else {
                 return Terrain.Forest;

@@ -386,7 +386,7 @@ const fisher: PersonType = {
 const hunter: PersonType = {
     type: "HUNT",
     travel: 4,
-    home: 0,
+    home: 1,
     work_strength: 0.2,
     work_radius: 1.5,
     draft: {
