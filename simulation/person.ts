@@ -8,6 +8,11 @@ import { Point } from "../map/mapUtil";
 const MORTALITY = "MORT";
 const NO_CHANGE = "STAY";
 
+export type TransactionRecord = {
+    bought: { [resource: string] : number };
+    sold: { [resource: string] : number };
+}
+
 export const DISPLAY_TYPE = {
     HUNT: "gatherer",
     FARM: "farmer",
@@ -32,6 +37,7 @@ export type Person = {
     surplus: { [resource: string] : number };
     demand: { [resource: string] : number };
     budget: { [resource: string] : number };
+    transactions: {[key:string] : {[rtype: string] : number[] }};
 }
 
 function add_value(obj: object, key: string, val: number) : void {
@@ -186,6 +192,7 @@ export class PersonUtil {
             surplus: {},
             demand: {},
             budget: {},
+            transactions: {},
         }
         for (let [rtype, rcost] of Object.entries(replicate_cost)) {
             person.store[rtype] -= rcost;
@@ -379,7 +386,7 @@ const fisher: PersonType = {
 const hunter: PersonType = {
     type: "HUNT",
     travel: 4,
-    home: 1,
+    home: 0,
     work_strength: 0.2,
     work_radius: 1.5,
     draft: {

@@ -86,7 +86,7 @@ export class Simulation {
         while (true) {
             terrainMap = new TerrainMap(FIXED_MAP_SIZE);
             let land: Array<string> = this.getLand(terrainMap.map);
-            if (land.length >= 100) {
+            if (land.length >= 30) {
                 this.land_tiles = land;
                 break;
             }
@@ -129,6 +129,7 @@ export class Simulation {
                 surplus: {},
                 demand: {},
                 budget: {},
+                transactions: {},
             }
             this.people[person.unique_id] = person;
         }

@@ -54,6 +54,8 @@ export function do_business(people: Person[], market_condition: MarketConditions
     // BUY up until budget runs out, or demand has been reached.
     let total_bought : { [resource: string] : number } = {FOOD: 0} // Just initiate here to avoid nasty
     for (let person of people) {
+        // Clear transactions
+        person.transactions = {}
         for (let [rtype, rd] of Object.entries(person.demand)) {
             let res_budget = person.budget[rtype] ? person.budget[rtype] : 0;
             let curr_wallet = person.store["GOLD"] ? person.store["GOLD"] : 0;
@@ -71,9 +73,15 @@ export function do_business(people: Person[], market_condition: MarketConditions
             person.store["GOLD"] -= real_spending;
             person.store[rtype] += purchase_amount; // Transaction complete on buyers end.
             total_bought[rtype] += purchase_amount;
-            person.eventlog += `She bought ${purchase_amount} of ${rtype} for ${real_spending} GOLD. `;
+            if ("BUY" in person.transactions) {
+                person.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
+            } else {
+                person.transactions["BUY"] = {};
+                person.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
+            }
         }
     }
+
     let scale : { [resource: string] : number } = {};
     for (let [rtype, rb] of Object.entries(total_bought)) {
         let scale_factor = rb / (market_condition.supply[rtype] + 0.01);
@@ -93,7 +101,12 @@ export function do_business(people: Person[], market_condition: MarketConditions
             } else {
                 person.store["GOLD"] = sold_for;
             }
-            person.eventlog += `she sold ${total_sold} of ${rtype} for ${sold_for} gold. `;
+            if ("SELL" in person.transactions) {
+                person.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
+            } else {
+                person.transactions["SELL"] = {};
+                person.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
+            }
         }
     }
     market_condition.activity = total_bought;

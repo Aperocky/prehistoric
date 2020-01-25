@@ -166,7 +166,6 @@ function listGeneralInfo() {
     // Display Market information
     WebUtil.splitLine(siminfobox);
     WebUtil.visualizeMarketCondition(siminfobox, simulation.market_conditions);
-    siminfobox.appendChild(WebUtil.addInfoField("General Information: ", "#b2b"));
     let report = BureauOfStatistics.generate_statistic_report(Object.values(simulation.people));
     WebUtil.visualizePeopleGroup(siminfobox, report);
     siminfobox.appendChild(WebUtil.addInfoField("Civil Buildings: ", "#bb3"));
