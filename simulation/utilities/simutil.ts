@@ -1,8 +1,8 @@
-import { TerrainMap, Point } from "../map/mapUtil";
-import { ResourceMap } from "../map/informationMap";
-import { Person, PersonUtil } from "./person";
-import { Building } from "./buildings";
-import { PRODUCE_MAP, PRODUCE_TYPE } from "./resources";
+import { TerrainMap, Point } from "../../map/mapUtil";
+import { ResourceMap } from "../../map/informationMap";
+import { Person, PersonUtil } from "../person";
+import { Building } from "../buildings";
+import { PRODUCE_MAP, PRODUCE_TYPE } from "../resources";
 
 // Efforts at production
 export function create_effort_map(people: Person[], boundary: number): ResourceMap {

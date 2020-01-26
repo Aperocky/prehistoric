@@ -1,4 +1,4 @@
-import { StatisticsReport } from "../simulation/simutil";
+import { StatisticsReport } from "../simulation/utilities/simutil";
 import { DISPLAY_TYPE } from "../simulation/person";
 import { Person } from "../simulation/person";
 import { Building } from "../simulation/buildings";

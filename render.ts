@@ -3,7 +3,7 @@ import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 import { ResourceMap } from "./map/informationMap";
 import { DISPLAY_TYPE } from "./simulation/person";
-import { BureauOfStatistics } from "./simulation/simutil";
+import { BureauOfStatistics } from "./simulation/utilities/simutil";
 
 // Buttons
 const logButton = document.getElementById("logbut");

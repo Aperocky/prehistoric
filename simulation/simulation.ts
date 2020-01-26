@@ -4,7 +4,7 @@ import { Person, PersonUtil } from "./person";
 import { Building, BuildingUtil } from "./buildings";
 import { MarketConditions, get_supply_and_demand, do_business } from "./market";
 import { v4 as uuid } from 'uuid';
-import * as SimUtil from "./simutil";
+import * as SimUtil from "./utilities/simutil";
 
 export const FIXED_MAP_SIZE = 20;
 const INITIAL_BATCH_SIZE = 20;
