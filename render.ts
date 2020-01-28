@@ -201,12 +201,12 @@ function listLocationInfo(pointstr) {
     }
 }
 
-function listSimulationLogs() {
-    WebUtil.clearDiv(siminfobox);
-    for (let i = simulation.log_queue.length-1; i >= 0; i--) {
-        siminfobox.appendChild(WebUtil.addInfoField(simulation.log_queue[i]));
-    }
-}
+// function listSimulationLogs() {
+//     WebUtil.clearDiv(siminfobox);
+//     for (let i = simulation.log_queue.length-1; i >= 0; i--) {
+//         siminfobox.appendChild(WebUtil.addInfoField(simulation.log_queue[i]));
+//     }
+// }
 
 // ---------------------------------------------------------------------------
 // Create people sprite by extracting position from simulation and recreating
@@ -328,21 +328,10 @@ function runContainer(): void {
     listGeneralInfo();
 }
 
-let toggleLogButton = (() => {
-    let button_pressed = false;
-    return () => {
-        if (button_pressed) {
-            WebUtil.clearDiv(siminfobox);
-            listGeneralInfo();
-            logButton.style.borderStyle = "outset";
-        } else {
-            WebUtil.clearDiv(siminfobox);
-            listSimulationLogs();
-            logButton.style.borderStyle = "inset";
-        }
-        button_pressed = !button_pressed;
-    }
-})();
+let toggleLogButton = () => {
+    WebUtil.clearDiv(siminfobox);
+    listGeneralInfo();
+};
 
 let toggleShowButton = (() => {
     let button_pressed = true;

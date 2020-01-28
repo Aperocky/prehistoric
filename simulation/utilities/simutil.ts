@@ -53,13 +53,23 @@ export function create_production_map(effort_map: ResourceMap, map_cache, buildi
     return production_map;
 }
 
-function get_single_draft_type(draft_map: ResourceMap, production_map: ResourceMap, person: Person, draft_type: string, draft_stat: number[]): void {
+function get_single_draft_type(draft_map: ResourceMap, simulation, person: Person, draft_type: string, draft_stat: number[]): void {
     let draftpoints: Point[] = ResourceMap.get_radius_position(person.x, person.y, draft_stat[0]);
     for (let point of draftpoints) {
         let pointstr = ResourceMap.pointToStr(point.x, point.y);
-        if (pointstr in production_map.resourceMap) {
-            // Guaranteed to have only one type in production_map
-            let production_type_in_tile = Object.keys(production_map.resourceMap[pointstr])[0];
+        if (pointstr in simulation.production_map.resourceMap) {
+            if (draft_type == "FOOD") {
+                let draft_zone = PersonUtil.get_food_draft_type(person);
+                let geography = simulation.map_cache[pointstr].geography;
+                if (draft_zone == "LAND" && geography <= 0) {
+                    continue;
+                }
+                if (draft_zone == "WATER" && geography > 0) {
+                    continue;
+                }
+            }
+            // Guaranteed to have only one type in production_map, for now
+            let production_type_in_tile = Object.keys(simulation.production_map.resourceMap[pointstr])[0];
             if (production_type_in_tile == draft_type) {
                 draft_map.place_resource_with_position(pointstr, person.unique_id, draft_stat[1]);
             }
@@ -72,12 +82,12 @@ function get_single_draft_type(draft_map: ResourceMap, production_map: ResourceM
 // draft_info: O(1)
 // point: O(r^2)
 // r: O(1)
-export function create_draft_map(people: Person[], production_map: ResourceMap, boundary: number): ResourceMap {
+export function create_draft_map(people: Person[], simulation, boundary: number): ResourceMap {
     let draft_map = new ResourceMap(boundary);
     for (let person of people) {
         let draft_info: { [key: string]: number[] } = PersonUtil.get_draft(person);
         for (let [draft_type, draft_stat] of Object.entries(draft_info)) {
-            get_single_draft_type(draft_map, production_map, person, draft_type, draft_stat);
+            get_single_draft_type(draft_map, simulation, person, draft_type, draft_stat);
         }
     }
     return draft_map;

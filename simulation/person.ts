@@ -267,7 +267,7 @@ export class PersonUtil {
                 continue; // DUH
             }
             if (rtype in person.store) {
-                let demandMultiplier = 1.2 - person.store[rtype]/(rcount*10);
+                let demandMultiplier = 2 - person.store[rtype]/(rcount*7.5);
                 demandMultiplier = demandMultiplier < 0 ? 0 : demandMultiplier;
                 let rawDemand = rcount * 1.5;
                 if (rtype in person.income) {
@@ -279,7 +279,7 @@ export class PersonUtil {
                 }
                 demand[rtype] = rawDemand * demandMultiplier;
             } else {
-                demand[rtype] = rcount * 1.5;
+                demand[rtype] = rcount * 3;
             }
         }
         return demand;
@@ -305,6 +305,13 @@ export class PersonUtil {
         }
         return budget;
     }
+
+    static get_food_draft_type(person: Person) : string {
+        if (person.type in FOOD_DRAFT_TYPE) {
+            return FOOD_DRAFT_TYPE[person.type];
+        }
+        return "LAND"; // Placeholder
+    }
 }
 
 type PersonType = {
@@ -326,7 +333,7 @@ const fisher: PersonType = {
     travel: 1,
     home: 0,
     work_strength: 0.3,
-    work_radius: 1.5,
+    work_radius: 1,
     draft: {
         FOOD: [1, 1],
         GOLD: [1.5, 1]
@@ -499,7 +506,7 @@ const whaler: PersonType = {
     travel: 2,
     home: 0,
     work_strength: 0.15,
-    work_radius: 3.3,
+    work_radius: 3,
     draft: {
         FOOD: [3, 0.3],
     },
@@ -536,9 +543,9 @@ const lumber: PersonType = {
     travel: 1,
     home: 0,
     work_strength: 1,
-    work_radius: 1,
+    work_radius: 0,
     draft: {
-        WOOD : [1, 1],
+        WOOD : [0, 1],
     },
     consumption: {
         FOOD : 0.6,
@@ -586,6 +593,13 @@ const TYPE_MAP = {
     "TRAD" : trader,
     "WHAL" : whaler,
     "WOOD" : lumber,
+}
+
+const FOOD_DRAFT_TYPE = {
+    HUNT: "LAND",
+    FARM: "LAND",
+    FISH: "WATER",
+    WHAL: "WATER",
 }
 
 const PRODUCTION_TYPE_MAP = {

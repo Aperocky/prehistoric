@@ -15,7 +15,6 @@ export class Simulation {
     map_cache : { [location: string] : LocalInformation };
     land_tiles : Array<string>;
     people : { [key: string] : Person };
-    log_queue : string[];
 
     // Turn specifics
     year : number;
@@ -39,7 +38,6 @@ export class Simulation {
         this.draft_map = new ResourceMap(FIXED_MAP_SIZE);
         this.income_by_people = {};
         this.people_by_location = {};
-        this.log_queue = [];
         this.building_by_location = {};
         this.market_conditions = {
             supply: {},
@@ -56,7 +54,6 @@ export class Simulation {
             if (person.type == "MORT") {
                 // RIP
                 this.inherit_from(person);
-                this.log_to_queue(`RIP ${person.name}, ${person.eventlog}`);
                 delete this.people[person.unique_id];
             }
         }
@@ -66,7 +63,7 @@ export class Simulation {
         // Map logic (production, distribution on map scale)
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.map_cache, this.building_by_location, FIXED_MAP_SIZE);
-        this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this.production_map, FIXED_MAP_SIZE);
+        this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this, FIXED_MAP_SIZE);
         // The means of production
         this.income_by_people = this.harvest();
         this.distribute();
@@ -234,7 +231,6 @@ export class Simulation {
             if (!(person.type == "MORT")) {
                 let new_person = PersonUtil.run_replicate_func(person);
                 if (new_person) {
-                    this.log_to_queue(new_person.name + " is born");
                     this.people[new_person.unique_id] = new_person;
                     if (person.type == "MORT") {
                         person.eventlog += `She died giving birth to ${new_person.name}`;
@@ -250,12 +246,12 @@ export class Simulation {
     // Above are simulation core functions, below are utility functions
     // ---------------------------------------------------------------------------
 
-    log_to_queue(log: string) : void {
-        if (this.log_queue.length > 100) {
-            this.log_queue.shift();
-        }
-        this.log_queue.push((4500-this.year) + " BC: " + log);
-    }
+    //log_to_queue(log: string) : void {
+    //    if (this.log_queue.length > 100) {
+    //        this.log_queue.shift();
+    //    }
+    //    this.log_queue.push((4500-this.year) + " BC: " + log);
+    //}
 
     inherit_from(person: Person) : void {
         let pointstr = ResourceMap.pointToStr(person.x, person.y);
