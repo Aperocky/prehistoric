@@ -62,6 +62,8 @@ export function startingHelp(siminfobox) {
     siminfobox.appendChild(addInfoField("Everyone starts as gatherer, but they can change with circumstances", "#999"));
     siminfobox.appendChild(addInfoField("Each tile display a max of 15 people, more info can be found by clicking on land itself", "#999"));
     siminfobox.appendChild(addInfoField("By default, people are shown, click SHOW to toggle", "#999"));
+    siminfobox.appendChild(addInfoField("Wood is vital to the fishing economy, try generate maps that have wood", "#999"));
+    siminfobox.appendChild(addInfoField("Also water.", "#999"));
     siminfobox.appendChild(addInfoField("=============================", "#888"));
     siminfobox.appendChild(addInfoField("# Special thanks to Anuken for sprites", "#999"));
 }

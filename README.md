@@ -29,13 +29,11 @@ More reporting, a ranked wealth of cities and individuals.
 
 Types Coming soon:
 
-    Offshore fisher
-
-    Potter
+    Craftswoman
 
 Add resources:
 
-    Pots
+    TOOL
 
 Potentially create human intervention in form of government types and functions. Thinking of introducing taxman, bandits, and player decision on subsidies in next few iterations.
 
