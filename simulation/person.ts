@@ -1,4 +1,4 @@
-import { RESOURCE_TYPE } from "./resources";
+import { RESOURCE_TYPE, PRODUCE_TYPE } from "./resources";
 import * as firstnames from "../assets/data/firstname_f.json";
 import * as surnames from "../assets/data/surnames.json";
 import { v4 as uuid } from 'uuid';
@@ -22,6 +22,7 @@ export const DISPLAY_TYPE = {
     WHAL: "whaler",
     MORT: "deceased",
     WOOD: "lumberjack",
+    TOOL: "craftswoman",
 }
 
 export type Person = {
@@ -122,7 +123,11 @@ export class PersonUtil {
 
     static get_work_strength(person: Person) {
         let typedef = PersonUtil.get_type_def(person);
-        return typedef.work_strength;
+        let work_strength_mod = 0;
+        if (person.type in STRENGTH_MODIFIERS) {
+            work_strength_mod = STRENGTH_MODIFIERS[person.type](person);
+        }
+        return typedef.work_strength + work_strength_mod;
     }
 
     static get_production_type(person: Person) {
@@ -312,6 +317,15 @@ export class PersonUtil {
         }
         return "LAND"; // Placeholder
     }
+
+    // For independent production methods
+    static private_enteprise(person: Person) : void {
+        if (person.type in PRIVATE_ENTEPRISE) {
+            let resource_type = PRODUCE_TYPE[PRODUCTION_TYPE_MAP[person.type]];
+            let resource_production = PRIVATE_ENTEPRISE[person.type](person);
+            lang.add_value(person.income, resource_type, resource_production, "ENTEPRISE");
+        }
+    }
 }
 
 type PersonType = {
@@ -365,6 +379,9 @@ const fisher: PersonType = {
                     if (Math.random() < 0.02) {
                         return "TRAD";
                     }
+                    if (Math.random() < 0.05) {
+                        return "TOOL";
+                    }
                 }
                 if (building.type == "CITY") {
                     if (Math.random() < 0.05) {
@@ -372,6 +389,9 @@ const fisher: PersonType = {
                     }
                     if (Math.random() < 0.1) {
                         return "TRAD";
+                    }
+                    if (Math.random() < 0.1) {
+                        return "TOOL";
                     }
                 }
             }
@@ -456,12 +476,23 @@ const farmer: PersonType = {
         GOLD: [1.5, 1]
     },
     consumption: {
-        FOOD : 0.4
+        FOOD : 0.4,
+        TOOL : 0.1,
     },
     change_func: (person, simulation) => {
         // 2% chance to just become hunter because 'Rebellion' while young
         if (Math.random() < 0.02 && person.age < 40) {
             return "HUNT";
+        }
+        let point = ResourceMap.pointToStr(person.x, person.y);
+        if (simulation.building_by_location[point]) {
+            let building = simulation.building_by_location[point];
+            if (building.type == "TOWN" && Math.random() < 0.2) {
+                return "TOOL";
+            }
+            if (building.type == "CITY" && Math.random() < 0.4) {
+                return "TOOL";
+            }
         }
         return NO_CHANGE;
     },
@@ -487,9 +518,14 @@ const trader: PersonType = {
         FOOD : 0.5,
     },
     change_func: (person, simulation) => {
-        // 2% chance to just become gatherer because 'Rebellion' while young
-        if (Math.random() < 0.02 && person.age < 30) {
-            return "HUNT";
+        // If hungry, become gatherer instead.
+        if ("FOOD" in person.deficit) {
+            if (Math.random() < 0.3) {
+                return "HUNT";
+            }
+            if (Math.random() < 0.3) {
+                return "TOOL";
+            }
         }
         return NO_CHANGE;
     },
@@ -549,9 +585,40 @@ const lumber: PersonType = {
     },
     consumption: {
         FOOD : 0.6,
+        TOOL : 0.2,
     },
     change_func: (person, simulation) => {
         // Hungry lumberjacks become hunter
+        if ("FOOD" in person.deficit && Math.random() < 0.5) {
+            return "HUNT";
+        }
+        return NO_CHANGE;
+    },
+    replicate_func: (person) => {
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+    },
+    replicate_cost: {
+        FOOD : 2,
+    }
+}
+
+// Special about tooler: this type runs own business and does not participate
+// In production and draft maps, instead, personal produce will be traded.
+const tooler: PersonType = {
+    type: "TOOL",
+    travel: 3,
+    home: 0,
+    work_strength: 1,
+    work_radius: 0,
+    draft: {
+        GOLD : [0, 1],
+    },
+    consumption: {
+        FOOD : 0.5,
+        WOOD : 0.2,
+    },
+    change_func: (person, simulation) => {
+        // Hungry craftman become hunter
         if ("FOOD" in person.deficit && Math.random() < 0.5) {
             return "HUNT";
         }
@@ -586,6 +653,40 @@ const RADIUS_MODIFIERS = {
     }
 }
 
+const STRENGTH_MODIFIERS = {
+    FARM: (person) : number => {
+        let tool_needed = PersonUtil.get_consumption(person)["TOOL"];
+        let tool_lacked = 0;
+        if ("TOOL" in person.deficit) {
+            tool_lacked = person.deficit["TOOL"];
+        }
+        let scale_modifier = (tool_needed - tool_lacked)/tool_needed;
+        return scale_modifier;
+    },
+    WOOD: (person) : number => {
+        let tool_needed = PersonUtil.get_consumption(person)["TOOL"];
+        let tool_lacked = 0;
+        if ("TOOL" in person.deficit) {
+            tool_lacked = person.deficit["TOOL"];
+        }
+        let scale_modifier = (tool_needed - tool_lacked)/tool_needed;
+        return scale_modifier;
+    },
+}
+
+const PRIVATE_ENTEPRISE = {
+    // Private production, free market enteprise!
+    TOOL: (person) : number => {
+        let wood_needed = PersonUtil.get_consumption(person)["WOOD"];
+        let wood_lacked = 0;
+        if ("WOOD" in person.deficit) {
+            wood_lacked = person.deficit["WOOD"];
+        }
+        let scale_modifier = (wood_needed - wood_lacked)/wood_needed;
+        return (scale_modifier * 2 + 1)/3;
+    }
+}
+
 const TYPE_MAP = {
     "HUNT" : hunter,
     "FARM" : farmer,
@@ -593,6 +694,7 @@ const TYPE_MAP = {
     "TRAD" : trader,
     "WHAL" : whaler,
     "WOOD" : lumber,
+    "TOOL" : tooler,
 }
 
 const FOOD_DRAFT_TYPE = {
@@ -609,6 +711,7 @@ const PRODUCTION_TYPE_MAP = {
     TRAD: "TRAD",
     WHAL: "FISH",
     WOOD: "WOOD",
+    TOOL: "TOOL",
 }
 
 const BIRTH_TYPE_MAP = {
@@ -618,9 +721,11 @@ const BIRTH_TYPE_MAP = {
     TRAD: "TRAD",
     WHAL: "FISH",
     WOOD: "HUNT",
+    TOOL: "TOOL",
 }
 
 const deficit_complaints_map = {
     "FOOD" : "food",
     "WOOD" : "wood",
+    "TOOL" : "tooling",
 }

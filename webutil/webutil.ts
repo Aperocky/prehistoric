@@ -8,6 +8,7 @@ import * as lang from "../simulation/utilities/langutil";
 const rtypeColor = {
     "FOOD": "#fdb",
     "WOOD": "#8e4",
+    "TOOL": "#adc",
 }
 
 export function visualizeMarketCondition(siminfobox, market_condition: MarketConditions) {

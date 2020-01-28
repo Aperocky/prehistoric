@@ -71,6 +71,7 @@ const people_color_type = {
     TRAD: 0x902090,
     WHAL: 0x0020ab,
     WOOD: 0x654321,
+    TOOL: 0x36856b,
 }
 
 // Fix texture to prevent memory leak
@@ -82,6 +83,7 @@ const people_texture = {
     TRAD: getPeopleTexture(people_color_type["TRAD"]),
     WHAL: getPeopleTexture(people_color_type["WHAL"]),
     WOOD: getPeopleTexture(people_color_type["WOOD"]),
+    TOOL: getPeopleTexture(people_color_type["TOOL"]),
 }
 
 // ---------------------------------------------------------------------------

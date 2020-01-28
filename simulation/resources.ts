@@ -2,6 +2,7 @@ export const RESOURCE_TYPE = {
     FOOD: "FOOD",
     GOLD: "GOLD",
     WOOD: "WOOD",
+    TOOL: "TOOL",
 }
 
 export const PRODUCE_MAP = {
@@ -10,6 +11,7 @@ export const PRODUCE_MAP = {
     "HUNT": gathererProduction,
     "TRAD": tradeProduction,
     "WOOD": woodProduction,
+    "TOOL": toolProduction,
 };
 
 export const PRODUCE_TYPE = {
@@ -18,6 +20,7 @@ export const PRODUCE_TYPE = {
     "HUNT": RESOURCE_TYPE.FOOD,
     "TRAD": RESOURCE_TYPE.GOLD,
     "WOOD": RESOURCE_TYPE.WOOD,
+    "TOOL": RESOURCE_TYPE.TOOL,
 };
 
 function roundToCent(num: number) : number {
@@ -124,4 +127,10 @@ function fishProduction(strength: number, terrain: number, building) : number {
     }
     produce *= terrainModifier;
     return roundToCent(produce);
+}
+
+function toolProduction(strength: number, terrain: number, building) : number {
+    // TOOL PRODUCTION IS PRIVATE ENTEPRISE!
+    // It does not go through public distribution channels.
+    return 0;
 }

@@ -37,7 +37,7 @@ export function get_supply_and_demand(people: Person[]) : MarketConditions {
     // Total sale will be (supply*supply)/demand when demand > supply, or just demand, it will always be le than supply.
     let pricing = {};
     // Hard code here for resource types.
-    let all_resource_types = ["FOOD", "WOOD"];
+    let all_resource_types = ["FOOD", "WOOD", "TOOL"];
     for (let resource_type of all_resource_types) {
         let resource_supply = supply[resource_type] ? supply[resource_type] : 0;
         let resource_demand = demand[resource_type] ? demand[resource_type] : 0;
@@ -61,7 +61,7 @@ export function get_supply_and_demand(people: Person[]) : MarketConditions {
 
 export function do_business(people: Person[], market_condition: MarketConditions) : void {
     // BUY up until budget runs out, or demand has been reached.
-    let total_bought : { [resource: string] : number } = {FOOD: 0, WOOD: 0} // Just initiate here to avoid nasty
+    let total_bought : { [resource: string] : number } = {FOOD: 0, WOOD: 0, TOOL: 0} // Just initiate here to avoid nasty
     for (let person of people) {
         // Clear transactions
         person.transactions = {}

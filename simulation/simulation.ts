@@ -217,6 +217,8 @@ export class Simulation {
         }
         // Add income to people before trading begins.
         for (let person of Object.values(this.people)) {
+            // Add private production at personal level
+            PersonUtil.private_enteprise(person);
             PersonUtil.add_income_to_store(person);
         }
     }
