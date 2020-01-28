@@ -96,7 +96,7 @@ export function visualizePeopleGroup(siminfobox, report: StatisticsReport) : voi
     visualizeLivingStandard(siminfobox, "WEALTH", report.total_wealth);
     splitLine(siminfobox);
     siminfobox.appendChild(addInfoField("OCCUPATIONS", "#ecc"));
-    let occupations = lang.sortObject(report.composition);
+    let occupations = lang.sort_object(report.composition);
     for (let occ of occupations) {
         siminfobox.appendChild(addInfoField(getTableLine([DISPLAY_TYPE[occ[0]], occ[1].toString()], 13), "#ecc", "pre"));
     }

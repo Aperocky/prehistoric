@@ -162,9 +162,9 @@ export class TerrainMap {
         } else if (height > 1.2) {
             return Terrain.Mountain;
         } else {
-            if (precip < 2) {
+            if (precip < 1.8) {
                 return Terrain.Barren;
-            } else if (precip < 2.6) {
+            } else if (precip < 2.4) {
                 return Terrain.Grassland;
             } else {
                 return Terrain.Forest;

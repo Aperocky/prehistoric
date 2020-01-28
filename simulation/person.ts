@@ -4,6 +4,7 @@ import * as surnames from "../assets/data/surnames.json";
 import { v4 as uuid } from 'uuid';
 import { ResourceMap } from "../map/informationMap";
 import { Point } from "../map/mapUtil";
+import * as lang from "./utilities/langutil";
 
 const MORTALITY = "MORT";
 const NO_CHANGE = "STAY";
@@ -20,6 +21,7 @@ export const DISPLAY_TYPE = {
     TRAD: "trader",
     WHAL: "whaler",
     MORT: "deceased",
+    WOOD: "lumberjack",
 }
 
 export type Person = {
@@ -38,14 +40,6 @@ export type Person = {
     demand: { [resource: string] : number };
     budget: { [resource: string] : number };
     transactions: {[key:string] : {[rtype: string] : number[] }};
-}
-
-function add_value(obj: object, key: string, val: number) : void {
-    if (key in obj) {
-        obj[key] += val;
-    } else {
-        obj[key] = val;
-    }
 }
 
 export class PersonUtil {
@@ -231,7 +225,9 @@ export class PersonUtil {
                     surplus[rtype] = currplus; // Portion of store more than 10 years
                 }
             } else {
-                surplus[rtype] = rcount; // All of it, since it's not needed
+                if (rcount > 0) {
+                    surplus[rtype] = rcount; // All of it, since it's not needed
+                }
             }
         }
         // Mark all income over 50% yearly consumption for sale.
@@ -242,11 +238,11 @@ export class PersonUtil {
             if (rtype in PersonUtil.get_consumption(person)) {
                 let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 1.5;
                 if (currplus > 0) {
-                    add_value(surplus, rtype, currplus);
+                    lang.add_value(surplus, rtype, currplus);
                 }
             } else {
                 // This person doesn't actually need this resource, mark all for sale
-                add_value(surplus, rtype, rcount);
+                lang.add_value(surplus, rtype, rcount);
             }
         }
         return surplus;
@@ -269,7 +265,7 @@ export class PersonUtil {
                 }
                 rawDemand = rawDemand > 0 ? rawDemand : 0;
                 if (rawDemand == 0) {
-                    return {}; // This spare subsequent calculations
+                    continue; // This spare subsequent calculations
                 }
                 demand[rtype] = rawDemand * demandMultiplier;
             } else {
@@ -326,7 +322,8 @@ const fisher: PersonType = {
         GOLD: [2, 1]
     },
     consumption: {
-        FOOD : 0.5
+        FOOD : 0.5,
+        WOOD : 0.1,
     },
     change_func: (person, simulation) => {
         let point = ResourceMap.pointToStr(person.x, person.y);
@@ -376,7 +373,7 @@ const fisher: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/6)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
     replicate_cost: {
         FOOD : 2
@@ -408,6 +405,9 @@ const hunter: PersonType = {
                     return "TRAD";
                 }
             }
+        }
+        if (simulation.map_cache[point].geography == 3 && Math.random() < 0.1) {
+            return "WOOD";
         }
         if ("FOOD" in person.deficit || person.income["FOOD"] < 0.4) {
             if (simulation.map_cache[point].isCoast && Math.random() < 0.8) {
@@ -449,7 +449,7 @@ const farmer: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/5)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
     replicate_cost: {
         FOOD : 1.5
@@ -495,6 +495,7 @@ const whaler: PersonType = {
     },
     consumption: {
         FOOD : 0.6,
+        WOOD : 0.3,
     },
     change_func: (person, simulation) => {
         // Whaler is an earned distinction, the birth type is fisher. Once whaler, forever whaler.
@@ -520,12 +521,40 @@ const whaler: PersonType = {
     }
 }
 
+const lumber: PersonType = {
+    type: "WOOD",
+    travel: 1,
+    home: 0,
+    work_strength: 1,
+    work_radius: 0,
+    draft: {
+        WOOD : [0, 1],
+    },
+    consumption: {
+        FOOD : 0.6,
+    },
+    change_func: (person, simulation) => {
+        // Hungry lumberjacks become hunter
+        if ("FOOD" in person.deficit && Math.random() < 0.5) {
+            return "HUNT";
+        }
+        return NO_CHANGE;
+    },
+    replicate_func: (person) => {
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+    },
+    replicate_cost: {
+        FOOD : 2,
+    }
+}
+
 const TYPE_MAP = {
     "HUNT" : hunter,
     "FARM" : farmer,
     "FISH" : fisher,
     "TRAD" : trader,
     "WHAL" : whaler,
+    "WOOD" : lumber,
 }
 
 const PRODUCTION_TYPE_MAP = {
@@ -534,6 +563,7 @@ const PRODUCTION_TYPE_MAP = {
     FISH: "FISH",
     TRAD: "TRAD",
     WHAL: "FISH",
+    WOOD: "WOOD",
 }
 
 const BIRTH_TYPE_MAP = {
@@ -542,8 +572,10 @@ const BIRTH_TYPE_MAP = {
     FISH: "FISH",
     TRAD: "TRAD",
     WHAL: "FISH",
+    WOOD: "HUNT",
 }
 
 const deficit_complaints_map = {
     "FOOD" : "hungry",
+    "WOOD" : "needs wood",
 }

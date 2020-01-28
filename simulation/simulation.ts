@@ -73,6 +73,7 @@ export class Simulation {
         this.income_by_people = this.harvest();
         this.distribute();
         this.market_conditions = get_supply_and_demand(Object.values(this.people));
+        console.log(this.market_conditions);
         do_business(Object.values(this.people), this.market_conditions);
         // Life
         this.commence_life();
@@ -220,6 +221,10 @@ export class Simulation {
         for (let [person_id, income] of Object.entries(this.income_by_people)) {
             this.people[person_id].income = income;
         }
+        // Add income to people before trading begins.
+        for (let person of Object.values(this.people)) {
+            PersonUtil.add_income_to_store(person);
+        }
     }
 
     commence_life() {
@@ -227,7 +232,6 @@ export class Simulation {
         for (let person of Object.values(this.people)) {
             // Movements!
             person.age += 1;
-            PersonUtil.add_income_to_store(person);
             PersonUtil.consume(person);
             // Life!
             PersonUtil.run_change_func(person, this);

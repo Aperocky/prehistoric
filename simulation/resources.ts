@@ -1,6 +1,7 @@
 export const RESOURCE_TYPE = {
     FOOD: "FOOD",
-    GOLD: "GOLD"
+    GOLD: "GOLD",
+    WOOD: "WOOD",
 }
 
 export const PRODUCE_MAP = {
@@ -8,6 +9,7 @@ export const PRODUCE_MAP = {
     "FISH": fishProduction,
     "HUNT": gathererProduction,
     "TRAD": tradeProduction,
+    "WOOD": woodProduction,
 };
 
 export const PRODUCE_TYPE = {
@@ -15,10 +17,31 @@ export const PRODUCE_TYPE = {
     "FISH": RESOURCE_TYPE.FOOD,
     "HUNT": RESOURCE_TYPE.FOOD,
     "TRAD": RESOURCE_TYPE.GOLD,
+    "WOOD": RESOURCE_TYPE.WOOD,
 };
 
 function roundToCent(num: number) : number {
     return Math.floor(num*100)/100;
+}
+
+function woodProduction(strength: number, terrain: number, building) : number {
+    let terrainModifiers = {
+        3: 1,
+    };
+    let terrainModifier: number;
+    if (!(terrain in terrainModifiers)) {
+        return 0;
+    } else {
+        terrainModifier = terrainModifiers[terrain];
+    }
+    let produce: number;
+    if (strength < 3){
+        produce = strength;
+    } else {
+        produce = 3; // Cap on tree farming
+    }
+    produce *= terrainModifier;
+    return roundToCent(produce);
 }
 
 function tradeProduction(strength: number, terrain: number, building) : number {
@@ -31,7 +54,7 @@ function tradeProduction(strength: number, terrain: number, building) : number {
         }
     }
     // The more trader the more gold (inflation)
-    let produce = Math.log(strength) * strength;
+    let produce = Math.sqrt(strength) * strength;
     produce *= terrainModifier;
     return roundToCent(produce);
 }

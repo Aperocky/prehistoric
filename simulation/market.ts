@@ -32,14 +32,22 @@ export function get_supply_and_demand(people: Person[]) : MarketConditions {
     }
     // Calculate pricing
     // demand/supply/supply*budget < Too people unfriendly
+    // resource price = budget/supply
     // Total sale will be (supply*supply)/demand when demand > supply, or just demand, it will always be le than supply.
     let pricing = {};
-    for (let [resource_type, resource_demand] of Object.entries(demand)) {
+    // Hard code here for resource types.
+    let all_resource_types = ["FOOD", "WOOD"];
+    for (let resource_type of all_resource_types) {
         let resource_supply = supply[resource_type] ? supply[resource_type] : 0;
+        let resource_demand = demand[resource_type] ? demand[resource_type] : 0;
         let resource_budget = liquidity[resource_type] ? liquidity[resource_type] : 0;
         let resource_patched_supply = resource_supply + 1; // Don't divide by 0
         let resource_price = resource_budget / resource_patched_supply;
         pricing[resource_type] = resource_price;
+        // Proactively enforce market object nans
+        supply[resource_type] = resource_supply;
+        demand[resource_type] = resource_demand;
+        liquidity[resource_type] = resource_budget;
     }
     return {
         supply: supply,
@@ -52,7 +60,7 @@ export function get_supply_and_demand(people: Person[]) : MarketConditions {
 
 export function do_business(people: Person[], market_condition: MarketConditions) : void {
     // BUY up until budget runs out, or demand has been reached.
-    let total_bought : { [resource: string] : number } = {FOOD: 0} // Just initiate here to avoid nasty
+    let total_bought : { [resource: string] : number } = {FOOD: 0, WOOD: 0} // Just initiate here to avoid nasty
     for (let person of people) {
         // Clear transactions
         person.transactions = {}
