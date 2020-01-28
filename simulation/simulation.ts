@@ -28,7 +28,6 @@ export class Simulation {
     market_conditions: MarketConditions;
 
     generate() {
-        console.log("Refreshing map");
         this.people = {};
         this.geography = this.getNewTerrainMap();
         this.map_cache = createMapCache(this.geography);
@@ -53,7 +52,6 @@ export class Simulation {
 
     // State update function
     next_round() {
-        console.log("Going to next round");
         for (let person of Object.values(this.people)) {
             if (person.type == "MORT") {
                 // RIP
@@ -73,7 +71,6 @@ export class Simulation {
         this.income_by_people = this.harvest();
         this.distribute();
         this.market_conditions = get_supply_and_demand(Object.values(this.people));
-        console.log(this.market_conditions);
         do_business(Object.values(this.people), this.market_conditions);
         // Life
         this.commence_life();
@@ -228,7 +225,6 @@ export class Simulation {
     }
 
     commence_life() {
-        console.log("people count: " + Object.values(this.people).length);
         for (let person of Object.values(this.people)) {
             // Movements!
             person.age += 1;

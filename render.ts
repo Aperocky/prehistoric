@@ -143,13 +143,11 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
 function emphasizePerson() {
     this.scale.set(1);
     WebUtil.clearDiv(siminfobox);
-    WebUtil.visualizePerson(siminfobox, simulation.people[this.name]);
+    WebUtil.visualizePerson(simulation.market_conditions, siminfobox, simulation.people[this.name]);
 }
 
 function unEmphasizePerson() {
     this.scale.set(0.5);
-    WebUtil.clearDiv(siminfobox);
-    listGeneralInfo();
 }
 
 function displayLocationInfo() {
@@ -193,7 +191,7 @@ function listLocationInfo(pointstr) {
         let report = BureauOfStatistics.generate_statistic_report(simulation.people_by_location[pointstr]);
         WebUtil.visualizePeopleGroup(siminfobox, report);
         for (let person of simulation.people_by_location[pointstr]) {
-            WebUtil.visualizePerson(siminfobox, person, false);
+            WebUtil.visualizePerson(simulation.market_conditions, siminfobox, person, false);
         }
     }
     // Display draft information

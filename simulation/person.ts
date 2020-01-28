@@ -71,11 +71,7 @@ export class PersonUtil {
 
     static add_income_to_store(person: Person): void {
         for (let [income_type, income] of Object.entries(person.income)) {
-            if (income_type in person.store) {
-                person.store[income_type] += income;
-            } else {
-                person.store[income_type] = income;
-            }
+            lang.add_value(person.store, income_type, income, "ADDING INCOME TO STORE");
         }
     }
 
@@ -85,15 +81,15 @@ export class PersonUtil {
         for (let [consume_type, consume_count] of Object.entries(consumption)) {
             if (consume_type in person.store) {
                 if (consume_count < person.store[consume_type]) {
-                    person.store[consume_type] -= consume_count;
+                    lang.add_value(person.store, consume_type, -consume_count, "CONSUMING FROM STORE");
                 } else {
                     deficit[consume_type] = consume_count - person.store[consume_type];
                     person.store[consume_type] = 0;
-                    person.eventlog += `She's ${deficit_complaints_map[consume_type]}. `
+                    person.eventlog += `She needs more ${deficit_complaints_map[consume_type]}. `
                 }
             } else {
                 deficit[consume_type] = consume_count;
-                person.eventlog += `She's ${deficit_complaints_map[consume_type]}. `
+                person.eventlog += `She lacks ${deficit_complaints_map[consume_type]}. `
             }
         }
         person.deficit = deficit;
@@ -117,7 +113,11 @@ export class PersonUtil {
 
     static get_work_radius(person: Person) {
         let typedef = PersonUtil.get_type_def(person);
-        return typedef.work_radius;
+        let work_radius_mod = 0;
+        if (person.type in RADIUS_MODIFIERS) {
+            work_radius_mod = RADIUS_MODIFIERS[person.type](person);
+        }
+        return typedef.work_radius + work_radius_mod;
     }
 
     static get_work_strength(person: Person) {
@@ -146,7 +146,17 @@ export class PersonUtil {
 
     static get_draft(person: Person) {
         let typedef = PersonUtil.get_type_def(person);
-        return typedef.draft;
+        let draft_radius_mod = 0;
+        if (person.type in RADIUS_MODIFIERS) {
+            draft_radius_mod = RADIUS_MODIFIERS[person.type](person);
+        } else {
+            return typedef.draft;
+        }
+        let final_draft = JSON.parse(JSON.stringify(typedef.draft));
+        for (let key of Object.keys(final_draft)) {
+            final_draft[key][0] += draft_radius_mod;
+        }
+        return final_draft;
     }
 
     static run_change_func(person: Person, map_cache) {
@@ -189,7 +199,7 @@ export class PersonUtil {
             transactions: {},
         }
         for (let [rtype, rcost] of Object.entries(replicate_cost)) {
-            person.store[rtype] -= rcost;
+            lang.add_value(person.store, rtype, -rcost, "GIVING BIRTH AND DISTRIBUTING TO CHILD");
             if (person.store[rtype] < 0) {
                 person.type = MORTALITY;
             } else {
@@ -318,8 +328,8 @@ const fisher: PersonType = {
     work_strength: 0.3,
     work_radius: 1.5,
     draft: {
-        FOOD: [1.5, 1],
-        GOLD: [2, 1]
+        FOOD: [1, 1],
+        GOLD: [1.5, 1]
     },
     consumption: {
         FOOD : 0.5,
@@ -329,7 +339,7 @@ const fisher: PersonType = {
         let point = ResourceMap.pointToStr(person.x, person.y);
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
-            if (person.age >= 15) {
+            if (person.age >= 13) {
                 const get_random_position = () => Math.floor(Math.random() * simulation.geography.length);
                 if ("FOOD" in person.deficit) {
                     let randomX = get_random_position();
@@ -342,7 +352,7 @@ const fisher: PersonType = {
                     }
                 }
                 if (building.type == "TOWN") {
-                    if (Math.random() < 0.05) {
+                    if (Math.random() < 0.1) {
                         return "WHAL";
                     }
                     if (Math.random() < 0.02) {
@@ -350,10 +360,10 @@ const fisher: PersonType = {
                     }
                 }
                 if (building.type == "CITY") {
-                    if (Math.random() < 0.1) {
+                    if (Math.random() < 0.05) {
                         return "WHAL";
                     }
-                    if (Math.random() < 0.05) {
+                    if (Math.random() < 0.1) {
                         return "TRAD";
                     }
                 }
@@ -397,7 +407,7 @@ const hunter: PersonType = {
         let point = ResourceMap.pointToStr(person.x, person.y);
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
-            if (person.age > 15) {
+            if (person.age >= 15) {
                 if (building.type == "TOWN" && Math.random() < 0.05) {
                     return "TRAD";
                 }
@@ -491,7 +501,7 @@ const whaler: PersonType = {
     work_strength: 0.15,
     work_radius: 3.3,
     draft: {
-        FOOD: [3.3, 0.3],
+        FOOD: [3, 0.3],
     },
     consumption: {
         FOOD : 0.6,
@@ -526,9 +536,9 @@ const lumber: PersonType = {
     travel: 1,
     home: 0,
     work_strength: 1,
-    work_radius: 0,
+    work_radius: 1,
     draft: {
-        WOOD : [0, 1],
+        WOOD : [1, 1],
     },
     consumption: {
         FOOD : 0.6,
@@ -545,6 +555,27 @@ const lumber: PersonType = {
     },
     replicate_cost: {
         FOOD : 2,
+    }
+}
+
+const RADIUS_MODIFIERS = {
+    FISH: (person) : number => {
+        let wood_needed = PersonUtil.get_consumption(person)["WOOD"];
+        let wood_lacked = 0;
+        if ("WOOD" in person.deficit) {
+            wood_lacked = person.deficit["WOOD"];
+        }
+        let scale_modifier = (wood_needed - wood_lacked)/wood_needed;
+        return scale_modifier * 1;
+    },
+    WHAL: (person) : number => {
+        let wood_needed = PersonUtil.get_consumption(person)["WOOD"];
+        let wood_lacked = 0;
+        if ("WOOD" in person.deficit) {
+            wood_lacked = person.deficit["WOOD"];
+        }
+        let scale_modifier = (wood_needed - wood_lacked)/wood_needed;
+        return scale_modifier * 2;
     }
 }
 
@@ -576,6 +607,6 @@ const BIRTH_TYPE_MAP = {
 }
 
 const deficit_complaints_map = {
-    "FOOD" : "hungry",
-    "WOOD" : "needs wood",
+    "FOOD" : "food",
+    "WOOD" : "wood",
 }

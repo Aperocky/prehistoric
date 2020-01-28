@@ -1,6 +1,6 @@
 import { StatisticsReport } from "../simulation/utilities/simutil";
-import { DISPLAY_TYPE } from "../simulation/person";
-import { Person } from "../simulation/person";
+import { Person, PersonUtil, DISPLAY_TYPE } from "../simulation/person";
+import { PRODUCE_TYPE } from "../simulation/resources";
 import { Building } from "../simulation/buildings";
 import { MarketConditions } from "../simulation/market";
 import * as lang from "../simulation/utilities/langutil";
@@ -15,6 +15,9 @@ export function visualizeMarketCondition(siminfobox, market_condition: MarketCon
     let tableHeaders = getTableLine(["Resource", "Attribute", "Quantity"], 13);
     siminfobox.appendChild(addInfoField(tableHeaders, "#595", "pre"));
     for (let rtype of Object.keys(market_condition.supply)) {
+        if (market_condition.supply[rtype] == 0) {
+            continue;
+        }
         let color = rtypeColor[rtype];
         let supply = market_condition.supply[rtype].toString();
         let demand = market_condition.demand[rtype].toString();
@@ -118,28 +121,31 @@ function getTableLine(argv, table_width=10): string {
     return allStr.join("|");
 }
 
-function objectToPersonalTable(siminfobox, obj, state, color="#eee") {
+function objectToPersonalTable(mc, siminfobox, obj: {[key:string]:number}, state, color="#eee") {
     for (let [key, value] of Object.entries(obj)) {
         let tableLine: string;
         if (key == "GOLD") {
             tableLine = getTableLine([key, state, "N/A", value.toString()]);
             siminfobox.appendChild(addInfoField(tableLine, color, "pre"));
         } else {
-            tableLine = getTableLine([key, state, value.toString(), "N/A"]);
+            let price = (value * mc.pricing[key]).toString();
+            tableLine = getTableLine([key, state, value.toString(), price]);
             siminfobox.appendChild(addInfoField(tableLine, color, "pre"));
         }
     }
 }
 
-export function visualizePerson(siminfobox, person: Person, detailed=true) : void {
+export function visualizePerson(mc, siminfobox, person: Person, detailed=true) : void {
     if (detailed) {
         siminfobox.appendChild(addInfoField(`Name: ${person.name}`));
         siminfobox.appendChild(addInfoField(`Occupation: ${DISPLAY_TYPE[person.type]}`));
         siminfobox.appendChild(addInfoField(`Age: ${person.age}`));
         splitLine(siminfobox);
+
+        // Adding table about resource and income information
         let tableHeaderLine = getTableLine(["Resource", "Action", "Quantity", "Price"]);
         siminfobox.appendChild(addInfoField(tableHeaderLine, "#9a5", "pre"));
-        objectToPersonalTable(siminfobox, person.income, "INCOME", "#9e9");
+        objectToPersonalTable(mc, siminfobox, person.income, "INCOME", "#9e9");
         if ("SELL" in person.transactions || "BUY" in person.transactions) {
             for (let [state, stateval] of Object.entries(person.transactions)) {
                 for (let [key, val] of Object.entries(stateval)) {
@@ -148,8 +154,28 @@ export function visualizePerson(siminfobox, person: Person, detailed=true) : voi
                 }
             }
         }
-        objectToPersonalTable(siminfobox, person.store, "STORAGE", "#f5deb3");
+        objectToPersonalTable(mc, siminfobox, person.store, "STORAGE", "#f5deb3");
+
+        // Adding table about work information
+        if (person.type != "MORT") {
+            splitLine(siminfobox);
+            let workHeader = getTableLine(["Resource", "Work", "Radius", "Strength"]);
+            siminfobox.appendChild(addInfoField(workHeader, "#feb", "pre"));
+            let workResource = PRODUCE_TYPE[PersonUtil.get_production_type(person)];
+            let workStrength = PersonUtil.get_work_strength(person);
+            let workRadius = PersonUtil.get_work_radius(person);
+            let personDraft = PersonUtil.get_draft(person);
+            let workLine = getTableLine([workResource, "PRODUCE", workRadius.toString(), workStrength.toString()]);
+            siminfobox.appendChild(addInfoField(workLine, "#feb", "pre"));
+            for (let key of Object.keys(personDraft)) {
+                let draftLine = getTableLine([key, "DRAFT", personDraft[key][0].toString(), personDraft[key][1].toString()]);
+                siminfobox.appendChild(addInfoField(draftLine, "#feb", "pre"));
+            }
+        }
+
+        // Add message if any
         if (person.eventlog) {
+            splitLine(siminfobox);
             siminfobox.appendChild(addInfoField(`Message: ${person.eventlog}`));
         }
     } else {

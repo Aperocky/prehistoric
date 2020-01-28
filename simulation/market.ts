@@ -1,4 +1,5 @@
 import { Person, PersonUtil } from "./person";
+import * as lang from "./utilities/langutil";
 
 export type MarketConditions = {
     supply: { [resource: string]: number };
@@ -78,8 +79,8 @@ export function do_business(people: Person[], market_condition: MarketConditions
             let potential_purchase = spend_mark/rprice;
             let purchase_amount = potential_purchase > rd ? rd : potential_purchase; // Buy up to demand.
             let real_spending = purchase_amount * rprice;
-            person.store["GOLD"] -= real_spending;
-            person.store[rtype] += purchase_amount; // Transaction complete on buyers end.
+            lang.add_value(person.store, "GOLD", -real_spending, "SPENDING MONEY");
+            lang.add_value(person.store, rtype, purchase_amount, "BAGGING BOUGHT");
             total_bought[rtype] += purchase_amount;
             if ("BUY" in person.transactions) {
                 person.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
@@ -103,12 +104,8 @@ export function do_business(people: Person[], market_condition: MarketConditions
             }
             let total_sold = scale[rtype] * rs;
             let sold_for = total_sold * rprice;
-            person.store[rtype] -= total_sold;
-            if ("GOLD" in person.store) {
-                person.store["GOLD"] += sold_for;
-            } else {
-                person.store["GOLD"] = sold_for;
-            }
+            lang.add_value(person.store, rtype, -total_sold, "SELLING RESOURCES");
+            lang.add_value(person.store, "GOLD", sold_for, "REAPING PROFIT");
             if ("SELL" in person.transactions) {
                 person.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
             } else {

@@ -34,6 +34,12 @@ export class BuildingUtil {
         }
         if (building.maintenance > type_def.high_thresh) {
             building.maintenance = type_def.high_thresh;
+            if (type_def.upgrade in UPGRADE_GUARD_FUNCS) {
+                if (UPGRADE_GUARD_FUNCS[type_def.upgrade](people)) {
+                    return type_def.upgrade;
+                }
+                return type_def.type;
+            }
             return type_def.upgrade;
         }
         return type_def.type;
@@ -123,6 +129,12 @@ const city: BuildingType = {
     downgrade: "TOWN",
     create_func: (people: Person[]): boolean => {
         return false;
+    }
+}
+
+const UPGRADE_GUARD_FUNCS = {
+    "CITY": (people) => {
+        return people.length > 20;
     }
 }
 
