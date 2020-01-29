@@ -7,6 +7,7 @@ import { BureauOfStatistics } from "./simulation/utilities/simutil";
 
 // Buttons
 const logButton = document.getElementById("logbut");
+const decadeBut = document.getElementById("decade");
 const showButton = document.getElementById("showbut");
 showButton.style.borderStyle = "inset";
 const runTurnButton = document.getElementById("maketurn");
@@ -359,6 +360,19 @@ runTurnButton.addEventListener("click", () => {
     runContainer();
 });
 
+decadeBut.addEventListener("click", () => {
+    let timeOutLoop = (turns) => {
+        turns += 1;
+        runContainer();
+        if (turns < 10) {
+            setTimeout(() => {
+                timeOutLoop(turns);
+            }, 100);
+        }
+    }
+    timeOutLoop(0);
+});
+
 logButton.addEventListener("click", () => {
     toggleLogButton();
 });
@@ -366,3 +380,4 @@ logButton.addEventListener("click", () => {
 showButton.addEventListener("click", () => {
     toggleShowButton();
 });
+

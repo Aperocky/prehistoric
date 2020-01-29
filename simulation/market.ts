@@ -32,8 +32,8 @@ export function get_supply_and_demand(people: Person[]) : MarketConditions {
         obj_addition(liquidity, person.budget);
     }
     // Calculate pricing
-    // demand/supply/supply*budget < Too people unfriendly
-    // resource price = budget/supply
+    // resource price = budget/supply (If demand > supply)
+    // resource price = budget/supply*demand/supply (If demand < supply)
     // Total sale will be (supply*supply)/demand when demand > supply, or just demand, it will always be le than supply.
     let pricing = {};
     // Hard code here for resource types.
@@ -42,8 +42,9 @@ export function get_supply_and_demand(people: Person[]) : MarketConditions {
         let resource_supply = supply[resource_type] ? supply[resource_type] : 0;
         let resource_demand = demand[resource_type] ? demand[resource_type] : 0;
         let resource_budget = liquidity[resource_type] ? liquidity[resource_type] : 0;
+        let resource_demand_scale = resource_demand > resource_supply ? 1 : resource_demand/resource_supply;
         let resource_patched_supply = resource_supply + 1; // Don't divide by 0
-        let resource_price = resource_budget / resource_patched_supply;
+        let resource_price = resource_budget / resource_patched_supply * resource_demand_scale;
         pricing[resource_type] = resource_price;
         // Proactively enforce market object nans
         supply[resource_type] = resource_supply;

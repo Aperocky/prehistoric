@@ -158,6 +158,7 @@ export function visualizePerson(mc, siminfobox, person: Person, detailed=true) :
             }
         }
         objectToPersonalTable(mc, siminfobox, person.store, "STORAGE", "#f5deb3");
+        siminfobox.appendChild(addInfoField(`NET WORTH: ${PersonUtil.get_net_worth(person, mc)}`, "#d4af37", "pre"));
 
         // Adding table about work information
         if (person.type != "MORT") {

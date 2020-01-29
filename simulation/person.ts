@@ -326,6 +326,18 @@ export class PersonUtil {
             lang.add_value(person.income, resource_type, resource_production, "ENTEPRISE");
         }
     }
+
+    static get_net_worth(person: Person, mc) : number {
+        let net_worth = 0;
+        for (let [rtype, rcount] of Object.entries(person.store)) {
+            if (rtype == "GOLD") {
+                net_worth += rcount;
+            } else {
+                net_worth += mc.pricing[rtype] * rcount;
+            }
+        }
+        return net_worth;
+    }
 }
 
 type PersonType = {
@@ -435,11 +447,21 @@ const hunter: PersonType = {
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
             if (person.age >= 15) {
-                if (building.type == "TOWN" && Math.random() < 0.05) {
-                    return "TRAD";
+                if (building.type == "TOWN") {
+                    if (Math.random() < 0.05) {
+                        return "TRAD";
+                    }
+                    if (Math.random() < 0.1) {
+                        return "TOOL";
+                    }
                 }
-                if (building.type == "CITY" && Math.random() < 0.1) {
-                    return "TRAD";
+                if (building.type == "CITY") {
+                    if (Math.random() < 0.1) {
+                        return "TRAD";
+                    }
+                    if (Math.random() < 0.1) {
+                        return "TOOL";
+                    }
                 }
             }
         }
@@ -480,8 +502,8 @@ const farmer: PersonType = {
         TOOL : 0.1,
     },
     change_func: (person, simulation) => {
-        // 2% chance to just become hunter because 'Rebellion' while young
-        if (Math.random() < 0.02 && person.age < 40) {
+        // 5% chance to become hunter if not getting enough food
+        if (Math.random() < 0.05 && person.income["FOOD"] < PersonUtil.get_consumption(person)["FOOD"]) {
             return "HUNT";
         }
         let point = ResourceMap.pointToStr(person.x, person.y);
@@ -511,11 +533,11 @@ const trader: PersonType = {
     work_strength: 3, // Create money in town
     work_radius: 0,
     draft: {
-        GOLD: [0, 15],
+        GOLD: [0, 3],
     },
     consumption: {
-        GOLD : 0.5,
         FOOD : 0.5,
+        TOOL : 0.1,
     },
     change_func: (person, simulation) => {
         // If hungry, become gatherer instead.
