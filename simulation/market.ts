@@ -1,4 +1,4 @@
-import { Person, PersonUtil } from "./person";
+import { Person, PersonUtil } from "./people/person";
 import * as lang from "./utilities/langutil";
 
 export type MarketConditions = {

@@ -1,6 +1,6 @@
 import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap, createMapCache, LocalInformation } from "../map/informationMap";
-import { Person, PersonUtil } from "./person";
+import { Person, PersonUtil } from "./people/person";
 import { Building, BuildingUtil } from "./buildings";
 import { MarketConditions, get_supply_and_demand, do_business } from "./market";
 import { v4 as uuid } from 'uuid';

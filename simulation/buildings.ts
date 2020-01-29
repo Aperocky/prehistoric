@@ -1,6 +1,6 @@
 import { ResourceMap } from "../map/informationMap";
 import { Point } from "../map/mapUtil";
-import { Person } from "./person";
+import { Person } from "./people/person";
 
 const NIL = "NONE";
 

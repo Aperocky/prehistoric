@@ -1,5 +1,5 @@
 import { StatisticsReport } from "../simulation/utilities/simutil";
-import { Person, PersonUtil, DISPLAY_TYPE } from "../simulation/person";
+import { Person, PersonUtil, DISPLAY_TYPE } from "../simulation/people/person";
 import { PRODUCE_TYPE } from "../simulation/resources";
 import { Building } from "../simulation/buildings";
 import { MarketConditions } from "../simulation/market";
