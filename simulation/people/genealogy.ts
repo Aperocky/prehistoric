@@ -47,10 +47,7 @@ export class Genealogy {
         this.records[person.unique_id] = create_record(person, turn, mother.unique_id);
     }
 
-    get_parent(person: Person): Record | null {
-        if (this.records[person.unique_id].mother == "NATURIL") {
-            return null;
-        }
+    get_parent(person: Person): Record {
         return this.records[this.records[person.unique_id].mother]
     }
 
