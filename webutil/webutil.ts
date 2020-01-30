@@ -1,5 +1,6 @@
 import { StatisticsReport } from "../simulation/utilities/simutil";
 import { Person, PersonUtil, DISPLAY_TYPE } from "../simulation/people/person";
+import { Genealogy, Record } from "../simulation/people/genealogy";
 import { PRODUCE_TYPE } from "../simulation/resources";
 import { Building } from "../simulation/buildings";
 import { MarketConditions } from "../simulation/market";
@@ -138,7 +139,31 @@ function objectToPersonalTable(mc, siminfobox, obj: {[key:string]:number}, state
     }
 }
 
-export function visualizePerson(mc, siminfobox, person: Person, detailed=true) : void {
+let yearling = (y) => (4500 - y).toString() + " BC";
+
+function visualizeRecord(siminfobox, record: Record) {
+    let dturn: string = record.dturn ? yearling(record.dturn) : "";
+    siminfobox.appendChild(addInfoField(`${record.name}, ${yearling(record.bturn)} - ${dturn}`));
+}
+
+function visualizeFamily(siminfobox, genealogy: Genealogy, person: Person): void {
+    siminfobox.appendChild(addInfoField(`Parent`, "#99a"));
+    visualizeRecord(siminfobox, genealogy.get_parent(person));
+    siminfobox.appendChild(addInfoField(`Siblings`, "#9a9"));
+    for (let record of genealogy.get_sibling(person)) {
+        if (record.id == person.unique_id) {
+            continue;
+        }
+        visualizeRecord(siminfobox, record);
+    }
+    siminfobox.appendChild(addInfoField(`Children`, "#a99"));
+    for (let record of genealogy.get_children(person)) {
+        visualizeRecord(siminfobox, record);
+    }
+}
+
+export function visualizePerson(sim, siminfobox, person: Person, detailed=true) : void {
+    let mc = sim.market_conditions;
     if (detailed) {
         siminfobox.appendChild(addInfoField(`Name: ${person.name}`));
         siminfobox.appendChild(addInfoField(`Occupation: ${DISPLAY_TYPE[person.type]}`));
@@ -160,6 +185,9 @@ export function visualizePerson(mc, siminfobox, person: Person, detailed=true) :
         objectToPersonalTable(mc, siminfobox, person.store, "STORAGE", "#f5deb3");
         siminfobox.appendChild(addInfoField(`NET WORTH: ${PersonUtil.get_net_worth(person, mc)}`, "#d4af37", "pre"));
 
+        splitLine(siminfobox);
+        visualizeFamily(siminfobox, sim.genealogy, person);
+
         // Adding table about work information
         if (person.type != "MORT") {
             splitLine(siminfobox);
@@ -176,6 +204,7 @@ export function visualizePerson(mc, siminfobox, person: Person, detailed=true) :
                 siminfobox.appendChild(addInfoField(draftLine, "#feb", "pre"));
             }
         }
+        
 
         // Add message if any
         if (person.eventlog) {

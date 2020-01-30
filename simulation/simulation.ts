@@ -1,6 +1,7 @@
 import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap, createMapCache, LocalInformation } from "../map/informationMap";
 import { Person, PersonUtil } from "./people/person";
+import { Genealogy } from "./people/genealogy";
 import { Building, BuildingUtil } from "./buildings";
 import { MarketConditions, get_supply_and_demand, do_business } from "./market";
 import { v4 as uuid } from 'uuid';
@@ -15,6 +16,7 @@ export class Simulation {
     map_cache : { [location: string] : LocalInformation };
     land_tiles : Array<string>;
     people : { [key: string] : Person };
+    genealogy: Genealogy;
 
     // Turn specifics
     year : number;
@@ -46,6 +48,7 @@ export class Simulation {
             pricing: {},
             activity: {},
         } // Dummy
+        this.genealogy = new Genealogy(Object.values(this.people));
     }
 
     // State update function
@@ -54,6 +57,7 @@ export class Simulation {
             if (person.type == "MORT") {
                 // RIP
                 this.inherit_from(person);
+                this.genealogy.funeral(person, this.year);
                 delete this.people[person.unique_id];
             }
         }
@@ -234,6 +238,7 @@ export class Simulation {
                 let new_person = PersonUtil.run_replicate_func(person);
                 if (new_person) {
                     this.people[new_person.unique_id] = new_person;
+                    this.genealogy.birth(new_person, person, this.year);
                     if (person.type == "MORT") {
                         person.eventlog += `She died giving birth to ${new_person.name}`;
                     } else {
