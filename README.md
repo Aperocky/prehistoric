@@ -30,21 +30,25 @@ Traders produce gold (or fiat currency, whatever, the inflation is huge), it is 
 
 Each person produce supply, demand and budget based on current stock, desired consumption and gold available.
 
-It is then pooled together to create a market, prices can be extremely volatile! Usually, trader has a golden window where their need is fulfilled, during which exponential inflation happen. Gold supply then evens out and prices stablize.
+It is then pooled together to create a market, prices can be extremely volatile! Usually, trader has a golden window where their need is fulfilled, during which exponential inflation happen. Gold supply then evens out and prices stablize (and trader lose their influence).
 
 ## TODO
+
+Child rearing and inheritance of wealth.
+
+More type:
+
+    Banker
+
+    Bureaucrats
+
+More names:
+    
+    East asian names to come.
 
 Named cities
 
 More reporting, a ranked wealth of cities and individuals.
-
-Types Coming soon:
-
-    Craftswoman
-
-Add resources:
-
-    TOOL
 
 Potentially create human intervention in form of government types and functions. Thinking of introducing taxman, bandits, and player decision on subsidies in next few iterations.
 

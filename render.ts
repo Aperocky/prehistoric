@@ -2,7 +2,7 @@ import * as PIXI from "pixi.js";
 import * as WebUtil from "./webutil/webutil";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 import { ResourceMap } from "./map/informationMap";
-import { DISPLAY_TYPE } from "./simulation/person";
+import { DISPLAY_TYPE } from "./simulation/people/person";
 import { BureauOfStatistics } from "./simulation/utilities/simutil";
 
 // Buttons
