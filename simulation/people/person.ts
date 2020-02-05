@@ -11,11 +11,6 @@ import * as lang from "../utilities/langutil";
 const MORTALITY = "MORT";
 const NO_CHANGE = "STAY";
 
-export type TransactionRecord = {
-    bought: { [resource: string] : number };
-    sold: { [resource: string] : number };
-}
-
 export const DISPLAY_TYPE = {
     HUNT: "gatherer",
     FARM: "farmer",
@@ -42,6 +37,7 @@ export type Person = {
     surplus: { [resource: string] : number };
     demand: { [resource: string] : number };
     budget: { [resource: string] : number };
+    family_support: {[key:string] : {[rtype: string] : number }};
     transactions: {[key:string] : {[rtype: string] : number[] }};
 }
 
@@ -129,7 +125,16 @@ export class PersonUtil {
         if (person.type in STRENGTH_MODIFIERS) {
             work_strength_mod = STRENGTH_MODIFIERS[person.type](person);
         }
-        return typedef.work_strength + work_strength_mod;
+        // Add age constraints.
+        let age_modifier = 1;
+        if (person.age < 15) {
+            if (person.age < 6) {
+                age_modifier = 0;
+            } else {
+                age_modifier = (person.age - 5) * 0.1;
+            }
+        }
+        return (typedef.work_strength + work_strength_mod) * age_modifier;
     }
 
     static get_production_type(person: Person) {
@@ -146,22 +151,53 @@ export class PersonUtil {
         return typedef.home;
     }
 
-    static get_consumption(person: Person) {
+    static get_consumption(person: Person) : { [key: string]: number } {
         let typedef = PersonUtil.get_type_def(person);
-        return typedef.consumption;
+        // Add age into consideration.
+        // Children take child-sized meals
+        // Until age of 10, they don't consume other things
+        if (person.age > 15) {
+            return typedef.consumption;
+        } else {
+            let modconsumption = JSON.parse(JSON.stringify(typedef.consumption));
+            let isBaby = person.age < 10;
+            for (let key in modconsumption) {
+                if (key != "FOOD" && isBaby) {
+                    modconsumption[key] = 0;
+                }
+                modconsumption[key] *= 0.4 + person.age/25;
+            }
+            return modconsumption;
+        }
     }
 
-    static get_draft(person: Person) {
+    static get_draft(person: Person, genealogy) {
         let typedef = PersonUtil.get_type_def(person);
         let draft_radius_mod = 0;
         if (person.type in RADIUS_MODIFIERS) {
             draft_radius_mod = RADIUS_MODIFIERS[person.type](person);
-        } else {
-            return typedef.draft;
         }
         let final_draft = JSON.parse(JSON.stringify(typedef.draft));
         for (let key of Object.keys(final_draft)) {
             final_draft[key][0] += draft_radius_mod;
+        }
+        // Age and child modifiers, younger ones gets less, recent parents get more.
+        let age_modifier = 1;
+        if (person.age < 25) {
+            if (person.age < 6) {
+                age_modifier = 0;
+            } else {
+                age_modifier = (person.age - 5) * 0.05;
+            }
+        }
+        let child_ages = genealogy.get_children(person).map(c => genealogy.turn_num - c.bturn);
+        let child_modifier = child_ages.reduce((sum, curr) => {
+            let currmod = (17-curr)*0.03; // Most compensation at young age, reduce to 0 at 17.
+            return sum + (currmod > 0 ? currmod : 0);
+        }, 0);
+        let total_modifiers = age_modifier + child_modifier;
+        for (let key of Object.keys(final_draft)) {
+            final_draft[key][1] *= total_modifiers;
         }
         return final_draft;
     }
@@ -204,6 +240,7 @@ export class PersonUtil {
             demand: {},
             budget: {},
             transactions: {},
+            family_support: {},
         }
         for (let [rtype, rcost] of Object.entries(replicate_cost)) {
             lang.add_value(person.store, rtype, -rcost, "GIVING BIRTH AND DISTRIBUTING TO CHILD");
@@ -223,7 +260,7 @@ export class PersonUtil {
         }
         let typedef = PersonUtil.get_type_def(person);
         if (typedef.replicate_func(person)) {
-            let replicate_cost = typedef.replicate_cost;
+            let replicate_cost = {FOOD: 0.5}; // Standardize replicate cost.
             return PersonUtil.create_new_person_from_parent(person, replicate_cost);
         }
         return null;
@@ -266,17 +303,22 @@ export class PersonUtil {
     }
 
     // Amount that would be preferably bought.
-    static get_demand_resources(person: Person) : { [resource: string] : number } {
+    static get_demand_resources(person: Person, genealogy) : { [resource: string] : number } {
         let demand : { [resource: string] : number } = {};
         // Demand for things without 5 years supply and up to 50% more than consumption
         for (let [rtype, rcount] of Object.entries(PersonUtil.get_consumption(person))) {
             if (rtype == "GOLD") {
                 continue; // DUH
             }
+            if (rcount == 0) {
+                continue; // No actual demand
+            }
+            let child_ages = genealogy.get_children(person).map(c => genealogy.turn_num - c.bturn);
+            let child_modifier = child_ages.reduce((sum, curr) => sum + curr > 16 ? 0 : 0.5, 0);
             if (rtype in person.store) {
-                let demandMultiplier = 2 - person.store[rtype]/(rcount*7.5);
+                let demandMultiplier = 2 - person.store[rtype]/(rcount*6);
                 demandMultiplier = demandMultiplier < 0 ? 0 : demandMultiplier;
-                let rawDemand = rcount * 1.5;
+                let rawDemand = rcount * (1.5 + child_modifier);
                 if (rtype in person.income) {
                     rawDemand -= person.income[rtype];
                 }
@@ -286,7 +328,7 @@ export class PersonUtil {
                 }
                 demand[rtype] = rawDemand * demandMultiplier;
             } else {
-                demand[rtype] = rcount * 3;
+                demand[rtype] = rcount * (3 + child_modifier * 2);
             }
         }
         return demand;
@@ -339,6 +381,38 @@ export class PersonUtil {
             }
         }
         return net_worth;
+    }
+
+    static provide_childcare(person: Person, simulation) : void {
+        // Give resources to children, younger ones gets precedence
+        let children = simulation.genealogy.get_children(person).map(c => simulation.people[c.id]).filter(Boolean).reverse();
+        let self_consumption = PersonUtil.get_consumption(person);
+        person.family_support["SUPPORT"] = {};
+        for (let c of children) {
+            let consumption = PersonUtil.get_consumption(c);
+            c.family_support["RECEIVE"] = {};
+            for (let rtype in consumption) {
+                let rcount = lang.get_numeric_value(person.store, rtype);
+                if (rcount < lang.get_numeric_value(self_consumption, rtype) * 0.8) {
+                    continue;
+                } else {
+                    let available = rcount - lang.get_numeric_value(self_consumption, rtype) * 0.8;
+                    let transfer = available > consumption[rtype] ? consumption[rtype] : available;
+                    lang.add_value(c.store, rtype, transfer);
+                    lang.add_value(person.store, rtype, -transfer);
+                    lang.add_value(person.family_support["SUPPORT"], rtype, transfer);
+                    lang.add_value(c.family_support["RECEIVE"], rtype, transfer);
+                }
+            }
+        }
+    }
+
+    static get_real_consumption(person: Person) : {[rtype: string]: number} {
+        let result: {[rtype: string]: number} = {};
+        for (let [rtype, rcount] of Object.entries(PersonUtil.get_consumption(person))) {
+            result[rtype] = rcount - lang.get_numeric_value(person.deficit, rtype);
+        }
+        return result;
     }
 }
 

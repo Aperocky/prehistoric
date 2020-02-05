@@ -21,6 +21,7 @@ function create_record(person: Person, turn: number, mother="NATURIL"): Record {
 }
 
 export class Genealogy {
+    turn_num: number;
     records: { [id: string]: Record };
 
     constructor(people: Person[]) {
@@ -33,6 +34,7 @@ export class Genealogy {
             mother: "GOD",
             children: [],
         }
+        this.turn_num = 0;
         for (let person of people) {
             this.records[person.unique_id] = create_record(person, 0-person.age);
         }

@@ -182,6 +182,16 @@ export function visualizePerson(sim, siminfobox, person: Person, detailed=true) 
                 }
             }
         }
+        if ("SUPPORT" in person.family_support || "RECEIVE" in person.family_support) {
+            for (let [state, stateval] of Object.entries(person.family_support)) {
+                for (let [key, val] of Object.entries(stateval)) {
+                    let total_value = lang.get_numeric_value(mc.pricing, key) * val;
+                    let tableLine = getTableLine([key, state, val.toString(), total_value.toString()]);
+                    siminfobox.appendChild(addInfoField(tableLine, "#e99", "pre"));
+                }
+            }
+        }
+        objectToPersonalTable(mc, siminfobox, PersonUtil.get_real_consumption(person), "CONSUME", "#abc");
         objectToPersonalTable(mc, siminfobox, person.store, "STORAGE", "#f5deb3");
         siminfobox.appendChild(addInfoField(`NET WORTH: ${PersonUtil.get_net_worth(person, mc)}`, "#d4af37", "pre"));
 
@@ -196,7 +206,7 @@ export function visualizePerson(sim, siminfobox, person: Person, detailed=true) 
             let workResource = PRODUCE_TYPE[PersonUtil.get_production_type(person)];
             let workStrength = PersonUtil.get_work_strength(person);
             let workRadius = PersonUtil.get_work_radius(person);
-            let personDraft = PersonUtil.get_draft(person);
+            let personDraft = PersonUtil.get_draft(person, sim.genealogy);
             let workLine = getTableLine([workResource, "PRODUCE", workRadius.toString(), workStrength.toString()]);
             siminfobox.appendChild(addInfoField(workLine, "#feb", "pre"));
             for (let key of Object.keys(personDraft)) {

@@ -63,6 +63,7 @@ export class Simulation {
         }
         // Move first, so same people in same place create same contributions/ income
         this.year += 1;
+        this.genealogy.turn_num = this.year;
         this.move_people();
         // Map logic (production, distribution on map scale)
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
@@ -71,7 +72,7 @@ export class Simulation {
         // The means of production
         this.income_by_people = this.harvest();
         this.distribute();
-        this.market_conditions = get_supply_and_demand(Object.values(this.people));
+        this.market_conditions = get_supply_and_demand(Object.values(this.people), this);
         do_business(Object.values(this.people), this.market_conditions);
         // Life
         this.commence_life();
@@ -119,7 +120,7 @@ export class Simulation {
                 y: point.y,
                 income: {},
                 deficit: {},
-                store: {FOOD: 1},
+                store: {FOOD: 1, GOLD: 1},
                 type: "HUNT",
                 name: PersonUtil.get_random_full_name(),
                 unique_id: uuid(),
@@ -129,6 +130,7 @@ export class Simulation {
                 demand: {},
                 budget: {},
                 transactions: {},
+                family_support: {},
             }
             this.people[person.unique_id] = person;
         }
@@ -211,9 +213,10 @@ export class Simulation {
 
     // SOYUZ !!!
     distribute() {
-        // Clear all previous income by people
+        // Clear all previous income/family support by people
         for (let person of Object.values(this.people)) {
             person.income = {};
+            person.family_support = {};
         }
         // Current income
         for (let [person_id, income] of Object.entries(this.income_by_people)) {
@@ -224,6 +227,7 @@ export class Simulation {
             // Add private production at personal level
             PersonUtil.private_enteprise(person);
             PersonUtil.add_income_to_store(person);
+            PersonUtil.provide_childcare(person, this);
         }
     }
 
@@ -326,4 +330,3 @@ export class Simulation {
         return location_info;
     }
 }
-

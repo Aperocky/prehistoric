@@ -85,7 +85,7 @@ function get_single_draft_type(draft_map: ResourceMap, simulation, person: Perso
 export function create_draft_map(people: Person[], simulation, boundary: number): ResourceMap {
     let draft_map = new ResourceMap(boundary);
     for (let person of people) {
-        let draft_info: { [key: string]: number[] } = PersonUtil.get_draft(person);
+        let draft_info: { [key: string]: number[] } = PersonUtil.get_draft(person, simulation.genealogy);
         for (let [draft_type, draft_stat] of Object.entries(draft_info)) {
             get_single_draft_type(draft_map, simulation, person, draft_type, draft_stat);
         }

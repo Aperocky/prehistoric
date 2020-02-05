@@ -9,27 +9,17 @@ export type MarketConditions = {
     activity: { [resource: string]: number };
 }
 
-function obj_addition(sumobj: { [resource: string]: number }, indobj: { [resource: string]: number }) : void {
-    for (let [rtype, rcount] of Object.entries(indobj)) {
-        if (rtype in sumobj) {
-            sumobj[rtype] += rcount;
-        } else {
-            sumobj[rtype] = rcount;
-        }
-    }
-}
-
-export function get_supply_and_demand(people: Person[]) : MarketConditions {
+export function get_supply_and_demand(people: Person[], simulation) : MarketConditions {
     let supply:{ [resource: string]: number } = {};
     let demand:{ [resource: string]: number } = {};
     let liquidity:{ [resource: string]: number } = {};
     for (let person of people) {
         person.surplus = PersonUtil.get_surplus_resources(person);
-        person.demand = PersonUtil.get_demand_resources(person);
+        person.demand = PersonUtil.get_demand_resources(person, simulation.genealogy);
         person.budget = PersonUtil.get_available_budget(person);
-        obj_addition(supply, person.surplus);
-        obj_addition(demand, person.demand);
-        obj_addition(liquidity, person.budget);
+        lang.obj_addition(supply, person.surplus);
+        lang.obj_addition(demand, person.demand);
+        lang.obj_addition(liquidity, person.budget);
     }
     // Calculate pricing
     // resource price = budget/supply (If demand > supply)

@@ -14,7 +14,6 @@ export type PersonType = {
     consumption: { [key: string]: number };
     change_func: Function;
     replicate_func: Function;
-    replicate_cost: { [key: string]: number };
 }
 
 const fisher: PersonType = {
@@ -87,9 +86,6 @@ const fisher: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
-    replicate_cost: {
-        FOOD : 2
-    }
 }
 
 const hunter: PersonType = {
@@ -145,9 +141,6 @@ const hunter: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
-    replicate_cost: {
-        FOOD : 2
-    }
 }
 
 const farmer: PersonType = {
@@ -184,9 +177,6 @@ const farmer: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
-    replicate_cost: {
-        FOOD : 1.5
-    }
 }
 
 const trader: PersonType = {
@@ -217,9 +207,6 @@ const trader: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
     },
-    replicate_cost: {
-        FOOD : 2,
-    }
 }
 
 const whaler: PersonType = {
@@ -254,9 +241,6 @@ const whaler: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
     },
-    replicate_cost: {
-        FOOD : 2,
-    }
 }
 
 const lumber: PersonType = {
@@ -282,9 +266,6 @@ const lumber: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
     },
-    replicate_cost: {
-        FOOD : 2,
-    }
 }
 
 // Special about tooler: this type runs own business and does not participate
@@ -312,9 +293,6 @@ const tooler: PersonType = {
     replicate_func: (person) => {
         return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
     },
-    replicate_cost: {
-        FOOD : 2,
-    }
 }
 
 export const TYPE_MAP = {
