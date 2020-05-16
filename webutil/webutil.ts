@@ -139,7 +139,7 @@ function objectToPersonalTable(mc, siminfobox, obj: {[key:string]:number}, state
     }
 }
 
-let yearling = (y) => (4500 - y).toString() + " BC";
+let yearling = (y) => y.toString() + " AD";
 
 function visualizeRecord(siminfobox, record: Record) {
     let dturn: string = record.dturn ? yearling(record.dturn) : "";
@@ -214,7 +214,6 @@ export function visualizePerson(sim, siminfobox, person: Person, detailed=true) 
                 siminfobox.appendChild(addInfoField(draftLine, "#feb", "pre"));
             }
         }
-        
 
         // Add message if any
         if (person.eventlog) {

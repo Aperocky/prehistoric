@@ -80,7 +80,6 @@ export class Simulation {
         // Building logic
         this.add_and_run_buildings();
     }
-
     getNewTerrainMap() : number[][] {
         let terrainMap;
         while (true) {

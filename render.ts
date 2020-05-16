@@ -45,6 +45,7 @@ const publicRenderer = PIXI.RenderTexture.create();
 let peopleSprites: PIXI.Sprite[];
 let buildingSprites: { [key: string]: PIXI.Sprite };
 let people_shown = true;
+let focus_person: string = "NONE";
 
 const textureMap = {
     "-1": ["deepwater"],
@@ -135,7 +136,8 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
     sprite.scale.set(0.5);
     sprite
         .on('mouseover', emphasizePerson)
-        .on('mouseout', unEmphasizePerson);
+        .on('mouseout', unEmphasizePerson)
+        .on('click', toggleLockPersonInfo);
     return sprite;
 }
 
@@ -143,17 +145,37 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
 // Display hooks
 // ---------------------------------------------------------------------------
 
+function toggleLockPersonInfo() {
+    if (focus_person == this.name) {
+        focus_person = "NONE";
+        return;
+    }
+    this.scale.set(1);
+    WebUtil.clearDiv(siminfobox);
+    WebUtil.visualizePerson(simulation, siminfobox, simulation.people[this.name]);
+    focus_person = this.name;
+}
+
 function emphasizePerson() {
+    if (focus_person != "NONE") {
+       return;
+    }
     this.scale.set(1);
     WebUtil.clearDiv(siminfobox);
     WebUtil.visualizePerson(simulation, siminfobox, simulation.people[this.name]);
 }
 
 function unEmphasizePerson() {
+    if (focus_person != "NONE") {
+       return;
+    }
     this.scale.set(0.5);
 }
 
 function displayLocationInfo() {
+    if (focus_person != "NONE") {
+       return;
+    }
     WebUtil.clearDiv(siminfobox);
     let pointstr = this.name;
     listLocationInfo(pointstr);
@@ -165,7 +187,7 @@ function displayLocationInfo() {
 
 function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person or tile to see details..", "#999"));
-    siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (4500 - simulation.year) + " BC"));
+    siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (simulation.year) + " AD"));
     // Display Market information
     WebUtil.splitLine(siminfobox);
     WebUtil.visualizeMarketCondition(siminfobox, simulation.market_conditions);
@@ -203,13 +225,6 @@ function listLocationInfo(pointstr) {
         siminfobox.appendChild(WebUtil.addInfoField(`${draft_count} people draft resources from here.`));
     }
 }
-
-// function listSimulationLogs() {
-//     WebUtil.clearDiv(siminfobox);
-//     for (let i = simulation.log_queue.length-1; i >= 0; i--) {
-//         siminfobox.appendChild(WebUtil.addInfoField(simulation.log_queue[i]));
-//     }
-// }
 
 // ---------------------------------------------------------------------------
 // Create people sprite by extracting position from simulation and recreating
@@ -324,11 +339,22 @@ function runContainer(): void {
     for (let sp of peopleSprites) {
         mapContainer.addChild(sp);
     }
-    WebUtil.clearDiv(siminfobox);
-    if (!people_shown) {
-        togglePeopleSprites(false);
+    if (!(focus_person in simulation.people)) {
+        WebUtil.clearDiv(siminfobox);
+        if (!people_shown) {
+            togglePeopleSprites(false);
+        }
+        listGeneralInfo();
+    } else {
+        WebUtil.clearDiv(siminfobox);
+        WebUtil.visualizePerson(simulation, siminfobox, simulation.people[focus_person]);
+        // Find the focus person, if not in sprite, then remove.
+        for (let sp of peopleSprites) {
+            if (sp.name == focus_person) {
+                sp.scale.set(1);
+            }
+        }
     }
-    listGeneralInfo();
 }
 
 let toggleLogButton = () => {
