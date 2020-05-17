@@ -205,7 +205,7 @@ const trader: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
 }
 
@@ -239,7 +239,7 @@ const whaler: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
 }
 
@@ -264,7 +264,7 @@ const lumber: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
 }
 
@@ -291,7 +291,7 @@ const tooler: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/8)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
     },
 }
 

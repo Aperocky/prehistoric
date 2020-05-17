@@ -12,6 +12,7 @@ const showButton = document.getElementById("showbut");
 showButton.style.borderStyle = "inset";
 const runTurnButton = document.getElementById("maketurn");
 const regenButton = document.getElementById("regen");
+const yearDisplay = document.getElementById("yearfill");
 
 const SPRITE_SIZE = 32;
 const app = new PIXI.Application({
@@ -145,10 +146,22 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
 // Display hooks
 // ---------------------------------------------------------------------------
 
+function clear_focus_scale() {
+    for (let sp of peopleSprites) {
+        if (sp.name == focus_person) {
+            sp.scale.set(0.5);
+        }
+    }
+}
+
 function toggleLockPersonInfo() {
-    if (focus_person == this.name) {
-        focus_person = "NONE";
-        return;
+    if (focus_person != "NONE") {
+        if (focus_person == this.name) {
+            focus_person = "NONE";
+            return;
+        } else {
+            clear_focus_scale();
+        }
     }
     this.scale.set(1);
     WebUtil.clearDiv(siminfobox);
@@ -174,7 +187,8 @@ function unEmphasizePerson() {
 
 function displayLocationInfo() {
     if (focus_person != "NONE") {
-       return;
+        clear_focus_scale();
+        focus_person = "NONE"
     }
     WebUtil.clearDiv(siminfobox);
     let pointstr = this.name;
@@ -187,7 +201,6 @@ function displayLocationInfo() {
 
 function listGeneralInfo() {
     siminfobox.appendChild(WebUtil.addInfoField("# Click on person or tile to see details..", "#999"));
-    siminfobox.appendChild(WebUtil.addInfoField("YEAR: " + (simulation.year) + " AD"));
     // Display Market information
     WebUtil.splitLine(siminfobox);
     WebUtil.visualizeMarketCondition(siminfobox, simulation.market_conditions);
@@ -322,6 +335,33 @@ function generateContainer(): void {
     WebUtil.startingHelp(siminfobox);
 }
 
+// Helper to focus on focus_person
+function focusOnPerson(): void {
+    WebUtil.clearDiv(siminfobox);
+    WebUtil.visualizePerson(simulation, siminfobox, simulation.people[focus_person]);
+    // Find the focus person, if not in sprite, then remove.
+    for (let sp of peopleSprites) {
+        if (sp.name == focus_person) {
+            sp.scale.set(1);
+        }
+    }
+}
+
+// Helper for runContainer to manage display information
+function runDisplay(): void {
+    if (!(focus_person in simulation.people)) {
+        focus_person = "NONE"
+        WebUtil.clearDiv(siminfobox);
+        if (!people_shown) {
+            togglePeopleSprites(false);
+        }
+        listGeneralInfo();
+    } else {
+        focusOnPerson();
+    }
+    yearDisplay.textContent = simulation.year.toString() + " AD"
+}
+
 function runContainer(): void {
     simulation.next_round();
     for (let xp of Object.values(buildingSprites)) {
@@ -339,22 +379,13 @@ function runContainer(): void {
     for (let sp of peopleSprites) {
         mapContainer.addChild(sp);
     }
-    if (!(focus_person in simulation.people)) {
-        WebUtil.clearDiv(siminfobox);
-        if (!people_shown) {
-            togglePeopleSprites(false);
-        }
-        listGeneralInfo();
-    } else {
-        WebUtil.clearDiv(siminfobox);
-        WebUtil.visualizePerson(simulation, siminfobox, simulation.people[focus_person]);
-        // Find the focus person, if not in sprite, then remove.
-        for (let sp of peopleSprites) {
-            if (sp.name == focus_person) {
-                sp.scale.set(1);
-            }
-        }
-    }
+    runDisplay();
+}
+
+export function linkFamily(person_id): void {
+    clear_focus_scale();
+    focus_person = person_id;
+    focusOnPerson();
 }
 
 let toggleLogButton = () => {

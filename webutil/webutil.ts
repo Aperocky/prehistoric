@@ -4,6 +4,7 @@ import { Genealogy, Record } from "../simulation/people/genealogy";
 import { PRODUCE_TYPE } from "../simulation/resources";
 import { Building } from "../simulation/buildings";
 import { MarketConditions } from "../simulation/market";
+import { linkFamily } from "../render";
 import * as lang from "../simulation/utilities/langutil";
 
 const rtypeColor = {
@@ -143,7 +144,17 @@ let yearling = (y) => y.toString() + " AD";
 
 function visualizeRecord(siminfobox, record: Record) {
     let dturn: string = record.dturn ? yearling(record.dturn) : "";
-    siminfobox.appendChild(addInfoField(`${record.name}, ${yearling(record.bturn)} - ${dturn}`));
+    let linktag = document.createElement("a");
+    linktag.textContent = record.name;
+    if (!record.dturn && (record.id != "NATURIL")) {
+        linktag.style.color = "#8df";
+        linktag.addEventListener("click", () => {
+            linkFamily(record.id);
+        });
+    }
+    let pfie = addInfoField(`, ${yearling(record.bturn)} - ${dturn}`)
+    pfie.prepend(linktag);
+    siminfobox.appendChild(pfie);
 }
 
 function visualizeFamily(siminfobox, genealogy: Genealogy, person: Person): void {

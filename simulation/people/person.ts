@@ -254,13 +254,18 @@ export class PersonUtil {
         return new_person;
     }
 
-    static run_replicate_func(person: Person): Person | null {
+    static run_replicate_func(person: Person, genealogy): Person | null {
         if (person.age < 13 || person.age > 45) {
             return null;
         }
+        let child_count = genealogy.records[person.unique_id].children.length;
+        let chance_base = (20 - child_count)/20;
+        let y_factor = person.age > 20 ? 0 : (20 - person.age)/7;
+        let o_factor = person.age < 35 ? 0 : (person.age - 35)/10;
+        let rest_chance = (chance_base - y_factor - o_factor)*0.6;
         let typedef = PersonUtil.get_type_def(person);
-        if (typedef.replicate_func(person)) {
-            let replicate_cost = {FOOD: 0.5}; // Standardize replicate cost.
+        if (typedef.replicate_func(person) && Math.random() < rest_chance) {
+            let replicate_cost = {FOOD: 0.5};
             return PersonUtil.create_new_person_from_parent(person, replicate_cost);
         }
         return null;

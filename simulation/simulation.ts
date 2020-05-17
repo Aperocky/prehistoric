@@ -238,7 +238,7 @@ export class Simulation {
             // Life!
             PersonUtil.run_change_func(person, this);
             if (!(person.type == "MORT")) {
-                let new_person = PersonUtil.run_replicate_func(person);
+                let new_person = PersonUtil.run_replicate_func(person, this.genealogy);
                 if (new_person) {
                     this.people[new_person.unique_id] = new_person;
                     this.genealogy.birth(new_person, person, this.year);
@@ -255,13 +255,6 @@ export class Simulation {
     // ---------------------------------------------------------------------------
     // Above are simulation core functions, below are utility functions
     // ---------------------------------------------------------------------------
-
-    //log_to_queue(log: string) : void {
-    //    if (this.log_queue.length > 100) {
-    //        this.log_queue.shift();
-    //    }
-    //    this.log_queue.push((4500-this.year) + " BC: " + log);
-    //}
 
     inherit_from(person: Person) : void {
         let pointstr = ResourceMap.pointToStr(person.x, person.y);
