@@ -28,7 +28,8 @@ const fisher: PersonType = {
     },
     consumption: {
         FOOD : 0.5,
-        WOOD : 0.1,
+        WOOD : 0.3,
+        TOOL : 0.3,
     },
     change_func: (person, simulation) => {
         let point = ResourceMap.pointToStr(person.x, person.y);
@@ -47,10 +48,7 @@ const fisher: PersonType = {
                     }
                 }
                 if (building.type == "TOWN") {
-                    if (Math.random() < 0.1) {
-                        return "WHAL";
-                    }
-                    if (Math.random() < 0.02) {
+                    if (Math.random() < 0.03) {
                         return "TRAD";
                     }
                     if (Math.random() < 0.05) {
@@ -58,9 +56,6 @@ const fisher: PersonType = {
                     }
                 }
                 if (building.type == "CITY") {
-                    if (Math.random() < 0.05) {
-                        return "WHAL";
-                    }
                     if (Math.random() < 0.1) {
                         return "TRAD";
                     }
@@ -106,6 +101,9 @@ const hunter: PersonType = {
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
             if (person.age >= 15) {
+                if (Math.random() < 0.01) {
+                    return "TRAD"; // Traveling traders
+                }
                 if (building.type == "TOWN") {
                     if (Math.random() < 0.05) {
                         return "TRAD";
@@ -155,7 +153,7 @@ const farmer: PersonType = {
     },
     consumption: {
         FOOD : 0.4,
-        TOOL : 0.1,
+        TOOL : 0.4,
     },
     change_func: (person, simulation) => {
         // 5% chance to become hunter if not getting enough food
@@ -200,40 +198,6 @@ const trader: PersonType = {
             }
             if (Math.random() < 0.3) {
                 return "TOOL";
-            }
-        }
-        return NO_CHANGE;
-    },
-    replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/7)
-    },
-}
-
-const whaler: PersonType = {
-    type: "WHAL",
-    travel: 2,
-    home: 0,
-    work_strength: 0.15,
-    work_radius: 3,
-    draft: {
-        FOOD: [3, 0.3],
-    },
-    consumption: {
-        FOOD : 0.6,
-        WOOD : 0.3,
-    },
-    change_func: (person, simulation) => {
-        // Whaler is an earned distinction, the birth type is fisher. Once whaler, forever whaler.
-        // However, ths guy can sail
-        const get_random_position = () => Math.floor(Math.random() * simulation.geography.length);
-        if ("FOOD" in person.deficit) {
-            let randomX = get_random_position();
-            let randomY = get_random_position();
-            let random_point = ResourceMap.pointToStr(randomX, randomY);
-            if (simulation.map_cache[random_point].isCoast) {
-                person.x = randomX;
-                person.y = randomY;
-                person.eventlog += "She has sailed away from her old town to here. ";
             }
         }
         return NO_CHANGE;
@@ -300,7 +264,6 @@ export const TYPE_MAP = {
     "FARM" : farmer,
     "FISH" : fisher,
     "TRAD" : trader,
-    "WHAL" : whaler,
     "WOOD" : lumber,
     "TOOL" : tooler,
 }

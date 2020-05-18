@@ -232,11 +232,9 @@ export class Simulation {
 
     commence_life() {
         for (let person of Object.values(this.people)) {
-            // Movements!
-            person.age += 1;
-            PersonUtil.consume(person);
-            // Life!
             PersonUtil.run_change_func(person, this);
+            PersonUtil.consume(person);
+            person.age += 1;
             if (!(person.type == "MORT")) {
                 let new_person = PersonUtil.run_replicate_func(person, this.genealogy);
                 if (new_person) {

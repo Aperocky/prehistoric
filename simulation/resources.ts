@@ -111,7 +111,7 @@ function gathererProduction(strength: number, terrain: number, building) : numbe
 function fishProduction(strength: number, terrain: number, building) : number {
     let terrainModifiers = {
         0: 1,
-        "-1": 0.5,
+        "-1": 0.75,
     };
     let terrainModifier: number;
     if (!(terrain in terrainModifiers)) {

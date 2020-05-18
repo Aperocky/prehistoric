@@ -16,7 +16,6 @@ export const DISPLAY_TYPE = {
     FARM: "farmer",
     FISH: "fisher",
     TRAD: "trader",
-    WHAL: "whaler",
     MORT: "deceased",
     WOOD: "lumberjack",
     TOOL: "craftswoman",
@@ -75,6 +74,9 @@ export class PersonUtil {
     }
 
     static consume(person: Person): void {
+        if (person.type == MORTALITY) {
+            return;
+        }
         let consumption = PersonUtil.get_consumption(person);
         let deficit = {};
         for (let [consume_type, consume_count] of Object.entries(consumption)) {
@@ -278,6 +280,10 @@ export class PersonUtil {
             if (rtype == "GOLD") {
                 continue; // DUH
             }
+            // Do not double count current year income
+            if (rtype in person.income) {
+                rcount -= person.income[rtype];
+            }
             if (rtype in PersonUtil.get_consumption(person)) {
                 let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 10;
                 if (currplus > 0) {
@@ -289,19 +295,21 @@ export class PersonUtil {
                 }
             }
         }
-        // Mark all income over 50% yearly consumption for sale.
+        // Mark all income over 50% yearly need for sale.
         for (let [rtype, rcount] of Object.entries(person.income)) {
             if (rtype == "GOLD") {
                 continue; // DUH
             }
+            let actual_need = 0;
             if (rtype in PersonUtil.get_consumption(person)) {
-                let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 1.5;
-                if (currplus > 0) {
-                    lang.add_value(surplus, rtype, currplus);
-                }
-            } else {
-                // This person doesn't actually need this resource, mark all for sale
-                lang.add_value(surplus, rtype, rcount);
+                actual_need += PersonUtil.get_consumption(person)[rtype];
+            }
+            if (rtype in person.family_support["SUPPORT"]) {
+                actual_need += person.family_support["SUPPORT"][rtype];
+            }
+            let currplus = rcount - actual_need * 1.5;
+            if (currplus > 0) {
+                lang.add_value(surplus, rtype, currplus);
             }
         }
         return surplus;
@@ -348,14 +356,17 @@ export class PersonUtil {
             budget["FOOD"] = credit_line;
             return budget;
         }
-        // Willing to spend demand/consumption*0.5 of all gold on deficits.
+        // Willing to spend demand/consumption*0.5 of all gold on deficits. but only up to full store amount.
         // Since there can be multiple resources, the potential budget is larger than store
         // But that's fine since this is not an distributing function
-        // Market economy at work baby!
+        // Market economy at work
         for (let [rtype, rcount] of Object.entries(person.demand)) {
-            let consumption = PersonUtil.get_consumption(person)[rtype];
-            let spendVal = rcount/consumption * 0.5 * credit_line;
-            budget[rtype] = spendVal;
+            let consumption = 0.1;
+            if (rtype in PersonUtil.get_consumption(person)) {
+                consumption += PersonUtil.get_consumption(person)[rtype];
+            }
+            let spendVal = rcount/(consumption) * 0.5 * credit_line;
+            budget[rtype] = spendVal > credit_line ? credit_line : spendVal;
         }
         return budget;
     }
@@ -394,6 +405,10 @@ export class PersonUtil {
         let self_consumption = PersonUtil.get_consumption(person);
         person.family_support["SUPPORT"] = {};
         for (let c of children) {
+            // Only supported until 18
+            if (c.age > 18) {
+                continue;
+            }
             let consumption = PersonUtil.get_consumption(c);
             c.family_support["RECEIVE"] = {};
             for (let rtype in consumption) {
@@ -425,7 +440,6 @@ const FOOD_DRAFT_TYPE = {
     HUNT: "LAND",
     FARM: "LAND",
     FISH: "WATER",
-    WHAL: "WATER",
 }
 
 const PRODUCTION_TYPE_MAP = {
@@ -433,7 +447,6 @@ const PRODUCTION_TYPE_MAP = {
     FARM: "FARM",
     FISH: "FISH",
     TRAD: "TRAD",
-    WHAL: "FISH",
     WOOD: "WOOD",
     TOOL: "TOOL",
 }
@@ -442,8 +455,7 @@ const BIRTH_TYPE_MAP = {
     HUNT: "HUNT",
     FARM: "FARM",
     FISH: "FISH",
-    TRAD: "TRAD",
-    WHAL: "FISH",
+    TRAD: "HUNT",
     WOOD: "HUNT",
     TOOL: "TOOL",
 }

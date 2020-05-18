@@ -10,37 +10,33 @@ export const RADIUS_MODIFIERS = {
     FISH: (person) : number => {
         let wood_needed = lang.get_numeric_value(consumption(person), "WOOD");
         let wood_lacked = lang.get_numeric_value(person.deficit, "WOOD");
+        let tool_needed = lang.get_numeric_value(consumption(person), "TOOL");
+        let tool_lacked = lang.get_numeric_value(person.deficit, "TOOL");
         let scale_modifier = 0
         if (wood_needed > 0) {
-            scale_modifier = (wood_needed - wood_lacked)/wood_needed;
+            scale_modifier += (wood_needed - wood_lacked)/wood_needed;
         }
-        return scale_modifier * 1;
+        if (tool_needed > 0) {
+            scale_modifier += (tool_needed - tool_lacked)/tool_needed;
+        }
+        return scale_modifier * 2.5; // Max Range = 6
     },
-    WHAL: (person) : number => {
-        let wood_needed = lang.get_numeric_value(consumption(person), "WOOD");
-        let wood_lacked = lang.get_numeric_value(person.deficit, "WOOD");
-        let scale_modifier = 0
-        if (wood_needed > 0) {
-            scale_modifier = (wood_needed - wood_lacked)/wood_needed;
-        }
-        return scale_modifier * 2;
-    }
 }
 
 export const STRENGTH_MODIFIERS = {
     FARM: (person) : number => {
         let tool_needed = lang.get_numeric_value(consumption(person), "TOOL");
         let tool_lacked = lang.get_numeric_value(person.deficit, "TOOL");
-        let scale_modifier = 0
+        let scale_modifier = 0;
         if (tool_needed > 0) {
             scale_modifier = (tool_needed - tool_lacked)/tool_needed;
         }
-        return scale_modifier;
+        return scale_modifier * 2;
     },
     WOOD: (person) : number => {
         let tool_needed = lang.get_numeric_value(consumption(person), "TOOL");
         let tool_lacked = lang.get_numeric_value(person.deficit, "TOOL");
-        let scale_modifier = 0
+        let scale_modifier = 0;
         if (tool_needed > 0) {
             scale_modifier = (tool_needed - tool_lacked)/tool_needed;
         }
@@ -57,6 +53,6 @@ export const PRIVATE_ENTEPRISE = {
         if (wood_needed > 0) {
             scale_modifier = (wood_needed - wood_lacked)/wood_needed;
         }
-        return (scale_modifier * 2 + 1)/3;
+        return (scale_modifier * 5 + 1)/3;
     }
 }
