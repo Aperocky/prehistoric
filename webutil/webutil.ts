@@ -185,8 +185,8 @@ export function visualizePerson(sim, siminfobox, person: Person, detailed=true) 
         let tableHeaderLine = getTableLine(["Resource", "Action", "Quantity", "Price"]);
         siminfobox.appendChild(addInfoField(tableHeaderLine, "#9a5", "pre"));
         objectToPersonalTable(mc, siminfobox, person.income, "INCOME", "#9e9");
-        if ("SELL" in person.transactions || "BUY" in person.transactions) {
-            for (let [state, stateval] of Object.entries(person.transactions)) {
+        if ("SELL" in person.market.transactions || "BUY" in person.market.transactions) {
+            for (let [state, stateval] of Object.entries(person.market.transactions)) {
                 for (let [key, val] of Object.entries(stateval)) {
                     let tableLine = getTableLine([key, state, val[0].toString(), val[1].toString()]);
                     siminfobox.appendChild(addInfoField(tableLine, "#99e", "pre"));

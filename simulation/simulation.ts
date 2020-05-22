@@ -61,6 +61,9 @@ export class Simulation {
                 delete this.people[person.unique_id];
             }
         }
+        if (this.year % 10 === 0) {
+            this.genealogy.clear_forgotten(this);
+        }
         // Move first, so same people in same place create same contributions/ income
         this.year += 1;
         this.genealogy.turn_num = this.year;
@@ -125,10 +128,7 @@ export class Simulation {
                 unique_id: uuid(),
                 eventlog: "",
                 age: Math.floor(Math.random()*20+10),
-                surplus: {},
-                demand: {},
-                budget: {},
-                transactions: {},
+                market: PersonUtil.init_market_pack(),
                 family_support: {},
             }
             this.people[person.unique_id] = person;

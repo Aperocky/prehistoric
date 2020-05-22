@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import * as WebUtil from "./webutil/webutil";
+import { Focus } from "./webutil/focus";
 import { Simulation, FIXED_MAP_SIZE } from "./simulation/simulation";
 import { ResourceMap } from "./map/informationMap";
 import { DISPLAY_TYPE } from "./simulation/people/person";
@@ -46,7 +47,7 @@ const publicRenderer = PIXI.RenderTexture.create();
 let peopleSprites: PIXI.Sprite[];
 let buildingSprites: { [key: string]: PIXI.Sprite };
 let people_shown = true;
-let focus_person: string = "NONE";
+const focus = new Focus();
 
 const textureMap = {
     "-1": ["deepwater"],
@@ -144,32 +145,33 @@ function getPeopleSprite(ptype: string): PIXI.Sprite {
 // Display hooks
 // ---------------------------------------------------------------------------
 
-function clear_focus_scale() {
+function clear_focus_scale(person_id) {
     for (let sp of peopleSprites) {
-        if (sp.name == focus_person) {
+        if (sp.name == person_id) {
             sp.scale.set(0.5);
         }
     }
 }
 
 function toggleLockPersonInfo() {
-    if (focus_person != "NONE") {
-        if (focus_person == this.name) {
-            focus_person = "NONE";
-            return;
+    if (focus.isFocusSet() && focus.getFocusType() == "person") {
+        let person_id = focus.getFocusValue();
+        if (person_id == this.name) {
+            focus.removeFocus();
+            return
         } else {
-            clear_focus_scale();
+            clear_focus_scale(person_id);
         }
     }
     this.scale.set(1);
     WebUtil.clearDiv(siminfobox);
     WebUtil.visualizePerson(simulation, siminfobox, simulation.people[this.name]);
-    focus_person = this.name;
+    focus.setFocus("person", this.name);
 }
 
 function emphasizePerson() {
-    if (focus_person != "NONE") {
-       return;
+    if (focus.isFocusSet()) {
+        return;
     }
     this.scale.set(1);
     WebUtil.clearDiv(siminfobox);
@@ -177,19 +179,20 @@ function emphasizePerson() {
 }
 
 function unEmphasizePerson() {
-    if (focus_person != "NONE") {
-       return;
+    if (focus.isFocusSet()) {
+        return;
     }
     this.scale.set(0.5);
 }
 
 function displayLocationInfo() {
-    if (focus_person != "NONE") {
-        clear_focus_scale();
-        focus_person = "NONE"
+    if (focus.isFocusSet() && focus.getFocusType() == "person") {
+        let person_id = focus.getFocusValue();
+        clear_focus_scale(person_id);
     }
-    WebUtil.clearDiv(siminfobox);
     let pointstr = this.name;
+    focus.setFocus("location", pointstr);
+    WebUtil.clearDiv(siminfobox);
     listLocationInfo(pointstr);
 }
 
@@ -336,10 +339,10 @@ function generateContainer(): void {
 // Helper to focus on focus_person
 function focusOnPerson(): void {
     WebUtil.clearDiv(siminfobox);
-    WebUtil.visualizePerson(simulation, siminfobox, simulation.people[focus_person]);
+    WebUtil.visualizePerson(simulation, siminfobox, simulation.people[focus.getFocusValue()]);
     // Find the focus person, if not in sprite, then remove.
     for (let sp of peopleSprites) {
-        if (sp.name == focus_person) {
+        if (sp.name == focus.getFocusValue()) {
             sp.scale.set(1);
         }
     }
@@ -347,15 +350,25 @@ function focusOnPerson(): void {
 
 // Helper for runContainer to manage display information
 function runDisplay(): void {
-    if (!(focus_person in simulation.people)) {
-        focus_person = "NONE"
+    if (!focus.isFocusSet()) {
         WebUtil.clearDiv(siminfobox);
         if (!people_shown) {
             togglePeopleSprites(false);
         }
         listGeneralInfo();
     } else {
-        focusOnPerson();
+        if (focus.getFocusType() == "person") {
+            if (!(focus.getFocusValue() in simulation.people)) {
+                focus.removeFocus();
+            } else {
+                focusOnPerson();
+            }
+        } else if (focus.getFocusType() == "location") {
+            WebUtil.clearDiv(siminfobox);
+            listLocationInfo(focus.getFocusValue());
+        } else {
+            console.log(`No such focus exist`);
+        }
     }
     yearDisplay.textContent = simulation.year.toString() + " AD"
 }
@@ -381,8 +394,11 @@ function runContainer(): void {
 }
 
 export function linkFamily(person_id): void {
-    clear_focus_scale();
-    focus_person = person_id;
+    if (focus.isFocusSet() && focus.getFocusType() == "person") {
+        person_id = focus.getFocusValue();
+        clear_focus_scale(person_id);
+    }
+    focus.setFocus("person", person_id);
     focusOnPerson();
 }
 

@@ -21,6 +21,13 @@ export const DISPLAY_TYPE = {
     TOOL: "craftswoman",
 }
 
+export type MarketPack = {
+    surplus: { [resource: string] : number };
+    demand: { [resource: string] : number };
+    budget: { [resource: string] : number };
+    transactions: {[key:string] : {[rtype: string] : number[] }};
+}
+
 export type Person = {
     x: number;
     y: number;
@@ -32,15 +39,24 @@ export type Person = {
     unique_id: string;
     eventlog: string;
     age: number;
-    // Market economy below
-    surplus: { [resource: string] : number };
-    demand: { [resource: string] : number };
-    budget: { [resource: string] : number };
+    market: MarketPack;
+//    surplus: { [resource: string] : number };
+//    demand: { [resource: string] : number };
+//    budget: { [resource: string] : number };
+//    transactions: {[key:string] : {[rtype: string] : number[] }};
     family_support: {[key:string] : {[rtype: string] : number }};
-    transactions: {[key:string] : {[rtype: string] : number[] }};
 }
 
 export class PersonUtil {
+
+    static init_market_pack(): MarketPack {
+        return {
+            surplus: {},
+            demand: {},
+            budget: {},
+            transactions: {},
+        }
+    }
 
     static move_person(person: Person, simulation): void {
         let north = ResourceMap.pointToStr(person.x, person.y + 1);
@@ -94,6 +110,11 @@ export class PersonUtil {
             }
         }
         person.deficit = deficit;
+
+        // Things go bad!
+        for (let rtype of Object.keys(person.store)) {
+            person.store[rtype] = person.store[rtype] * 0.9;
+        }
     }
 
     static get_random_name(surname: boolean) : string {
@@ -238,10 +259,7 @@ export class PersonUtil {
             unique_id: uuid(),
             eventlog: "",
             age: 0,
-            surplus: {},
-            demand: {},
-            budget: {},
-            transactions: {},
+            market: PersonUtil.init_market_pack(),
             family_support: {},
         }
         for (let [rtype, rcost] of Object.entries(replicate_cost)) {
@@ -360,7 +378,7 @@ export class PersonUtil {
         // Since there can be multiple resources, the potential budget is larger than store
         // But that's fine since this is not an distributing function
         // Market economy at work
-        for (let [rtype, rcount] of Object.entries(person.demand)) {
+        for (let [rtype, rcount] of Object.entries(person.market.demand)) {
             let consumption = 0.1;
             if (rtype in PersonUtil.get_consumption(person)) {
                 consumption += PersonUtil.get_consumption(person)[rtype];
@@ -428,6 +446,9 @@ export class PersonUtil {
     }
 
     static get_real_consumption(person: Person) : {[rtype: string]: number} {
+        if (person.type == "MORT") {
+            return {};
+        }
         let result: {[rtype: string]: number} = {};
         for (let [rtype, rcount] of Object.entries(PersonUtil.get_consumption(person))) {
             result[rtype] = rcount - lang.get_numeric_value(person.deficit, rtype);

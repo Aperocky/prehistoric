@@ -14,5 +14,6 @@ package:
 	@cp script.js prehistoric/script.js
 	@cp script.min.js prehistoric/script.min.js
 	@cp -rf assets prehistoric/assets
+	@rm -rf prehistoric/assets/blocks/nature
 
 .PHONY: build test

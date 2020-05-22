@@ -69,15 +69,15 @@ export function get_supply_and_demand(people: Person[], simulation) : MarketCond
     let liquidity: { [resource: string]: number } = {};
     let budget_quant_pair: { [resource: string]: any[] }= {"FOOD": [], "WOOD": [], "TOOL": []};
     for (let person of people) {
-        person.surplus = PersonUtil.get_surplus_resources(person);
-        person.demand = PersonUtil.get_demand_resources(person, simulation.genealogy);
-        person.budget = PersonUtil.get_available_budget(person);
-        lang.obj_addition(supply, person.surplus);
-        lang.obj_addition(demand, person.demand);
-        lang.obj_addition(liquidity, person.budget);
+        person.market.surplus = PersonUtil.get_surplus_resources(person);
+        person.market.demand = PersonUtil.get_demand_resources(person, simulation.genealogy);
+        person.market.budget = PersonUtil.get_available_budget(person);
+        lang.obj_addition(supply, person.market.surplus);
+        lang.obj_addition(demand, person.market.demand);
+        lang.obj_addition(liquidity, person.market.budget);
         for (let restype of all_resource_types) {
-            if (restype in person.demand && restype in person.budget) {
-                let pair = {"demand": person.demand[restype], "budget": person.budget[restype]};
+            if (restype in person.market.demand && restype in person.market.budget) {
+                let pair = {"demand": person.market.demand[restype], "budget": person.market.budget[restype]};
                 budget_quant_pair[restype].push(pair);
             }
         }
@@ -118,12 +118,12 @@ export function do_business(people: Person[], market_condition: MarketConditions
     let total_bought : { [resource: string] : number } = {FOOD: 0, WOOD: 0, TOOL: 0} // Just initiate here to avoid nasty
     for (let person of people) {
         // Clear transactions
-        person.transactions = {}
-        for (let [rtype, rd] of Object.entries(person.demand)) {
+        person.market.transactions = {}
+        for (let [rtype, rd] of Object.entries(person.market.demand)) {
             if (market_condition.supply[rtype] == 0) {
                 continue;
             }
-            let res_budget = person.budget[rtype] ? person.budget[rtype] : 0;
+            let res_budget = person.market.budget[rtype] ? person.market.budget[rtype] : 0;
             let curr_wallet = person.store["GOLD"] ? person.store["GOLD"] : 0;
             let spend_mark = curr_wallet > res_budget ? res_budget : curr_wallet;
             if (spend_mark == 0) {
@@ -139,11 +139,11 @@ export function do_business(people: Person[], market_condition: MarketConditions
             lang.add_value(person.store, "GOLD", -real_spending, "SPENDING MONEY");
             lang.add_value(person.store, rtype, purchase_amount, "BAGGING BOUGHT");
             total_bought[rtype] += purchase_amount;
-            if ("BUY" in person.transactions) {
-                person.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
+            if ("BUY" in person.market.transactions) {
+                person.market.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
             } else {
-                person.transactions["BUY"] = {};
-                person.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
+                person.market.transactions["BUY"] = {};
+                person.market.transactions["BUY"][rtype] = [purchase_amount, real_spending] as number[];
             }
         }
     }
@@ -154,7 +154,7 @@ export function do_business(people: Person[], market_condition: MarketConditions
         scale[rtype] = scale_factor;
     }
     for (let person of people) {
-        for (let [rtype, rs] of Object.entries(person.surplus)) {
+        for (let [rtype, rs] of Object.entries(person.market.surplus)) {
             let rprice = market_condition.pricing[rtype];
             if (rprice == 0) {
                 continue;
@@ -163,11 +163,11 @@ export function do_business(people: Person[], market_condition: MarketConditions
             let sold_for = total_sold * rprice;
             lang.add_value(person.store, rtype, -total_sold, "SELLING RESOURCES");
             lang.add_value(person.store, "GOLD", sold_for, "REAPING PROFIT");
-            if ("SELL" in person.transactions) {
-                person.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
+            if ("SELL" in person.market.transactions) {
+                person.market.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
             } else {
-                person.transactions["SELL"] = {};
-                person.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
+                person.market.transactions["SELL"] = {};
+                person.market.transactions["SELL"][rtype] = [total_sold, sold_for] as number[];
             }
         }
     }

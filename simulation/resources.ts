@@ -38,10 +38,10 @@ function woodProduction(strength: number, terrain: number, building) : number {
         terrainModifier = terrainModifiers[terrain];
     }
     let produce: number;
-    if (strength < 3){
+    if (strength < 4){
         produce = strength;
     } else {
-        produce = 3; // Cap on tree farming
+        produce = 4; // Cap on tree farming
     }
     produce *= terrainModifier;
     return roundToCent(produce);

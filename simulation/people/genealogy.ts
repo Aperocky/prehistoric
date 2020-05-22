@@ -54,14 +54,52 @@ export class Genealogy {
     }
 
     get_children(person: Person): Record[] {
-        return this.records[person.unique_id].children.map(
-            id => this.records[id]
-        );
+        return this.records[person.unique_id].children.filter(
+            id => {
+                if (!(id in this.records)) {
+                    return false;
+                }
+                return true;
+            }
+        ).map(id => this.records[id]);
     }
 
     get_sibling(person: Person): Record[] {
         return this.records[this.records[person.unique_id].mother].children.map(
             id => this.records[id]
         );
+    }
+
+    clear_forgotten(simulation): void {
+        let forgotten: string[] = [];
+        for (let [id, record] of Object.entries(this.records)) {
+            if (id == "NATURIL") {
+                continue;
+            }
+            if (id in simulation.people) {
+                continue;
+            } else {
+                if (!record.dturn) {
+                    continue;
+                }
+                if (this.turn_num - record.dturn < 10) {
+                    continue;
+                }
+                let in_living_memory: boolean = false;
+                for (let cid of record.children) {
+                    if (cid in simulation.people) {
+                        in_living_memory = true;
+                        break;
+                    }
+                }
+                if (!in_living_memory) {
+                    forgotten.push(id);
+                }
+            }
+        }
+        console.log(`Removing ${forgotten.length} forgotten people at turn ${this.turn_num}`);
+        for (let id of forgotten) {
+            delete this.records[id];
+        }
     }
 }
