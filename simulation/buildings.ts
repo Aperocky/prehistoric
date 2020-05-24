@@ -84,7 +84,7 @@ const farm: BuildingType = {
     low_thresh: 30,
     start_point: 50,
     high_thresh: 200,
-    upgrade: "FARM",
+    upgrade: "ESTATE",
     downgrade: "NONE",
     create_func: (people: Person[]): boolean => {
         let farmer_count = people.filter(p => p.type == "FARM").length;
@@ -95,11 +95,31 @@ const farm: BuildingType = {
     }
 }
 
+const estate: BuildingType = {
+    type: "ESTATE",
+    maintenance_cost: 3,
+    run_maintenance: (building: Building, people: Person[]): number => {
+        let farmer_count = people.filter(p => p.type == "FARM").length;
+        let other_count = people.length - farmer_count;
+        let new_maintenance = farmer_count - other_count;
+        new_maintenance -= people.length/2;
+        return new_maintenance;
+    },
+    low_thresh: 30,
+    start_point: 100,
+    high_thresh: 400,
+    upgrade: "ESTATE",
+    downgrade: "FARM",
+    create_func: (people: Person[]): boolean => {
+        return false;
+    }
+}
+
 const town: BuildingType = {
     type: "TOWN",
-    maintenance_cost: 8,
+    maintenance_cost: 10,
     run_maintenance: (building: Building, people: Person[]): number => {
-        let new_maintenance = people.length * people.length / 8;
+        let new_maintenance = people.length * people.length / 10;
         return new_maintenance;
     },
     low_thresh: 30,
@@ -108,7 +128,7 @@ const town: BuildingType = {
     upgrade: "CITY",
     downgrade: NIL,
     create_func: (people: Person[]): boolean => {
-        if (people.length >= 10) {
+        if (people.length > 10) {
             return true;
         }
         return false;
@@ -119,14 +139,31 @@ const city: BuildingType = {
     type: "CITY",
     maintenance_cost: 8,
     run_maintenance: (building: Building, people: Person[]): number => {
-        let new_maintenance = people.length * people.length / 32;
+        let new_maintenance = people.length * people.length / 50;
         return new_maintenance;
     },
     low_thresh: 50,
     start_point: 100,
     high_thresh: 400,
-    upgrade: "CITY",
+    upgrade: "METRO",
     downgrade: "TOWN",
+    create_func: (people: Person[]): boolean => {
+        return false;
+    }
+}
+
+const metro: BuildingType = {
+    type: "METRO",
+    maintenance_cost: 10,
+    run_maintenance: (building: Building, people: Person[]): number => {
+        let new_maintenance = people.length * people.length / 250;
+        return new_maintenance;
+    },
+    low_thresh: 50,
+    start_point: 200,
+    high_thresh: 1000,
+    upgrade: "METRO",
+    downgrade: "CITY",
     create_func: (people: Person[]): boolean => {
         return false;
     }
@@ -134,12 +171,20 @@ const city: BuildingType = {
 
 const UPGRADE_GUARD_FUNCS = {
     "CITY": (people) => {
-        return people.length > 20;
+        return people.length > 25;
+    },
+    "METRO": (people) => {
+        return people.length > 55;
+    },
+    "ESTATE": (people) => {
+        return people.filter(p => p.type == "FARM").length > 9;
     }
 }
 
 const BUILDING_MAP = {
     "FARM": farm,
+    "ESTATE": estate,
     "TOWN": town,
     "CITY": city,
+    "METRO": metro,
 }

@@ -38,10 +38,10 @@ function woodProduction(strength: number, terrain: number, building) : number {
         terrainModifier = terrainModifiers[terrain];
     }
     let produce: number;
-    if (strength < 4){
+    if (strength < 6){
         produce = strength;
     } else {
-        produce = 4; // Cap on tree farming
+        produce = 6; // Cap on tree farming
     }
     produce *= terrainModifier;
     return roundToCent(produce);
@@ -54,10 +54,12 @@ function tradeProduction(strength: number, terrain: number, building) : number {
             terrainModifier = 0.75;
         } else if (building.type == "CITY") {
             terrainModifier = 1;
+        } else if (building.type == "METRO") {
+            terrainModifier = 1.25
         }
     }
     // The more trader the more gold (inflation)
-    let produce = Math.sqrt(strength) * strength;
+    let produce = (1 + Math.log(strength)) * strength;
     produce *= terrainModifier;
     return roundToCent(produce);
 }
@@ -73,8 +75,12 @@ function farmProduction(strength: number, terrain: number, building) : number {
     } else {
         terrainModifier = terrainModifiers[terrain];
     }
-    if (building && building.type == "FARM") {
-        terrainModifier *= 1.25;
+    if (building) {
+        if (building.type == "FARM") {
+            terrainModifier *= 1.25;
+        } else if (building.type == "ESTATE") {
+            terrainModifier *= 1.5;
+        }
     }
     let produce: number;
     if (strength < 1) {

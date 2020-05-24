@@ -40,10 +40,6 @@ export type Person = {
     eventlog: string;
     age: number;
     market: MarketPack;
-//    surplus: { [resource: string] : number };
-//    demand: { [resource: string] : number };
-//    budget: { [resource: string] : number };
-//    transactions: {[key:string] : {[rtype: string] : number[] }};
     family_support: {[key:string] : {[rtype: string] : number }};
 }
 
@@ -225,9 +221,14 @@ export class PersonUtil {
         return final_draft;
     }
 
-    static run_change_func(person: Person, map_cache) {
+    static run_change_func(person: Person, map_cache): void {
         let typedef = PersonUtil.get_type_def(person);
-        let pstatus = typedef.change_func(person, map_cache);
+        let pstatus = person.type;
+        if (person.age > 13) {
+            pstatus = typedef.change_func(person, map_cache);
+        } else {
+            return;
+        }
         // General change logic independent to types, reserved for MORTALITY
         // Starvation is bad for health
         if (Math.random() < person.deficit[RESOURCE_TYPE.FOOD]){
@@ -235,7 +236,7 @@ export class PersonUtil {
             pstatus = MORTALITY;
         }
         // Ageing
-        if (Math.random() * 60 < person.age - 60) {
+        if (Math.random() * 60 < ((person.age - 60 > 15)? 15 : person.age - 60)) {
             person.eventlog = "She died of old age. ";
             pstatus = MORTALITY;
         }

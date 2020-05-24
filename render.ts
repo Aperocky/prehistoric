@@ -28,12 +28,12 @@ app.renderer.plugins.interaction.autoPreventDefault = false;
 // ---------------------------------------------------------------------------
 
 let loader = new PIXI.Loader();
-loader.add("assets/blocks/packed/groundpak.json");
+loader.add("assets/blocks/packed/groundpak2.json");
 let sheet;
 
 loader.onError.add((error) => console.error(error));
 loader.load((loader) => {
-    sheet = loader.resources["assets/blocks/packed/groundpak.json"].spritesheet;
+    sheet = loader.resources["assets/blocks/packed/groundpak2.json"].spritesheet;
     generateContainer();
 });
 
@@ -58,13 +58,17 @@ const textureMap = {
     4: ["rocks1", "rocks2"],
     100: ["farm1", "farm2"],
     101: ["town1", "town2"],
-    102: ["city1"],
+    102: ["city1", "city2"],
+    103: ["metro1", "metro2"],
+    104: ["estate1", "estate2"],
 }
 
 const building_to_texture_map = {
     "FARM": 100,
     "TOWN": 101,
     "CITY": 102,
+    "METRO": 103,
+    "ESTATE": 104,
 }
 
 const people_color_type = {
@@ -296,7 +300,10 @@ function createBuildingSprite(): void {
         let buildingSprite = getSprite(building_to_texture_map[building.type]);
         buildingSprite.name = building.type;
         if (building.type == "CITY") {
-            buildingSprite.scale.set(0.625) // Don't take up whole tile, that's ugly
+            buildingSprite.scale.set(0.625);
+        }
+        if (building.type == "METRO") {
+            buildingSprite.scale.set(0.75);
         }
         buildingSprite.x = point.x * SPRITE_SIZE;
         buildingSprite.y = point.y * SPRITE_SIZE;
@@ -350,11 +357,11 @@ function focusOnPerson(): void {
 
 // Helper for runContainer to manage display information
 function runDisplay(): void {
+    if (!people_shown) {
+        togglePeopleSprites(false);
+    }
     if (!focus.isFocusSet()) {
         WebUtil.clearDiv(siminfobox);
-        if (!people_shown) {
-            togglePeopleSprites(false);
-        }
         listGeneralInfo();
     } else {
         if (focus.getFocusType() == "person") {
@@ -395,14 +402,15 @@ function runContainer(): void {
 
 export function linkFamily(person_id): void {
     if (focus.isFocusSet() && focus.getFocusType() == "person") {
-        person_id = focus.getFocusValue();
-        clear_focus_scale(person_id);
+        let orig = focus.getFocusValue();
+        clear_focus_scale(orig);
     }
     focus.setFocus("person", person_id);
     focusOnPerson();
 }
 
 let toggleLogButton = () => {
+    focus.removeFocus();
     WebUtil.clearDiv(siminfobox);
     listGeneralInfo();
 };

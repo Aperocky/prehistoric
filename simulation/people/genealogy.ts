@@ -85,6 +85,9 @@ export class Genealogy {
                 if (this.turn_num - record.dturn < 10) {
                     continue;
                 }
+                if (record.mother in this.records && record.mother != "NATURIL") {
+                    continue;
+                }
                 let in_living_memory: boolean = false;
                 for (let cid of record.children) {
                     if (cid in simulation.people) {
