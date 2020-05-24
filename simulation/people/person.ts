@@ -21,12 +21,19 @@ export const DISPLAY_TYPE = {
     TOOL: "craftswoman",
 }
 
-export type MarketPack = {
+type MarketPack = {
+    experience: { [occupation: string]: number };
     surplus: { [resource: string] : number };
     demand: { [resource: string] : number };
     budget: { [resource: string] : number };
     transactions: {[key:string] : {[rtype: string] : number[] }};
 }
+
+type EmpirePack = {
+    allegiance: string;
+    citizenship: boolean;
+    naturalize_clock: number;
+};
 
 export type Person = {
     x: number;
@@ -47,11 +54,20 @@ export class PersonUtil {
 
     static init_market_pack(): MarketPack {
         return {
+            experience: {},
             surplus: {},
             demand: {},
             budget: {},
             transactions: {},
-        }
+        };
+    }
+
+    static init_empire_pack(): EmpirePack {
+        return {
+            allegiance: "NONE",
+            citizenship: false,
+            naturalize_clock: 0,
+        };
     }
 
     static move_person(person: Person, simulation): void {
@@ -219,6 +235,18 @@ export class PersonUtil {
             final_draft[key][1] *= total_modifiers;
         }
         return final_draft;
+    }
+
+    static update_experience(person): void {
+        if (!(person.type in person.market.experience)) {
+            person.market.experience[person.type] = 0;
+        }
+        for (let occupation of Object.keys(person.market.experience)) {
+            if (person.market.experience[occupation] > 0) {
+                person.market.experience[occupation] -= 1;
+            }
+        }
+        person.market.experience[person.type] += 2;
     }
 
     static run_change_func(person: Person, map_cache): void {
@@ -425,8 +453,10 @@ export class PersonUtil {
         person.family_support["SUPPORT"] = {};
         for (let c of children) {
             // Only supported until 18
-            if (c.age > 18) {
-                continue;
+            let support_factor = 1;
+            // Wean off instead of cut off.
+            if (c.age > 15) {
+                support_factor = (c.age < 30) ? 1 - (c.age - 15)/15 : 0;
             }
             let consumption = PersonUtil.get_consumption(c);
             c.family_support["RECEIVE"] = {};
@@ -435,8 +465,9 @@ export class PersonUtil {
                 if (rcount < lang.get_numeric_value(self_consumption, rtype) * 0.8) {
                     continue;
                 } else {
+                    let to_give = consumption[rtype] * support_factor;
                     let available = rcount - lang.get_numeric_value(self_consumption, rtype) * 0.8;
-                    let transfer = available > consumption[rtype] ? consumption[rtype] : available;
+                    let transfer = available > to_give ? to_give : available;
                     lang.add_value(c.store, rtype, transfer);
                     lang.add_value(person.store, rtype, -transfer);
                     lang.add_value(person.family_support["SUPPORT"], rtype, transfer);

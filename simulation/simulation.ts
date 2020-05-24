@@ -67,7 +67,7 @@ export class Simulation {
         // Move first, so same people in same place create same contributions/ income
         this.year += 1;
         this.genealogy.turn_num = this.year;
-        this.move_people();
+        this.move_people_and_update_experience();
         // Map logic (production, distribution on map scale)
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.map_cache, this.building_by_location, FIXED_MAP_SIZE);
@@ -83,6 +83,7 @@ export class Simulation {
         // Building logic
         this.add_and_run_buildings();
     }
+
     getNewTerrainMap() : number[][] {
         let terrainMap;
         while (true) {
@@ -194,10 +195,12 @@ export class Simulation {
         }
     }
 
-    move_people() {
+    move_people_and_update_experience() {
         for (let person of Object.values(this.people)) {
             // Refresh event log
             person.eventlog = "";
+            // Update experience
+            PersonUtil.update_experience(person);
             if ("FOOD" in person.deficit) {
                 for (let i = 0; i < PersonUtil.get_travel(person); i++) {
                     PersonUtil.move_person(person, this);

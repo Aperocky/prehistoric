@@ -140,6 +140,17 @@ function objectToPersonalTable(mc, siminfobox, obj: {[key:string]:number}, state
     }
 }
 
+function showExperience(siminfobox, experience, color="#dde") {
+    siminfobox.appendChild(addInfoField("EXPERIENCE", "99e"));
+    for (let [key, value] of Object.entries(experience)) {
+        if (value == 0) {
+            continue;
+        }
+        let tableLine = getTableLine([key, `${value} years`]);
+        siminfobox.appendChild(addInfoField(tableLine, color, "pre"))
+    }
+}
+
 let yearling = (y) => y.toString() + " AD";
 
 function visualizeRecord(siminfobox, record: Record) {
@@ -225,6 +236,10 @@ export function visualizePerson(sim, siminfobox, person: Person, detailed=true) 
                 siminfobox.appendChild(addInfoField(draftLine, "#feb", "pre"));
             }
         }
+
+        // Add table about experience
+        splitLine(siminfobox);
+        showExperience(siminfobox, person.market.experience);
 
         // Add message if any
         if (person.eventlog) {

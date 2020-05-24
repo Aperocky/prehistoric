@@ -2,14 +2,17 @@ A map generator that simulates people and early civilizations.
 
 http://aperocky.com/prehistoric
 
-![Market Economy](/md_images/0.png)
-Economy of a thriving prehistoric community
+![Life of Amy Freeman](/md_images/3.png)
+The current economic condition of Amy the lumberjack
 
-![City Life](/md_images/3.png)
-Town, cities and farms lead different lives.
+![Market Economy](/md_images/4.png)
+The general economy of the prehistoric world in year 249 AD.
 
-![Carrie Baker](/md_images/5.png)
-Checkout how Carrie Baker is doing.
+![Growth](/md_images/2.png)
+The world has grown a lot by 650 AD
+
+![Family](/md_images/0.png)
+Peek in the life of individual families - And see where siblings end up.
 
 ## How it works
 
@@ -30,25 +33,9 @@ Traders produce gold (or fiat currency, whatever, the inflation is huge), it is 
 
 Each person produce supply, demand and budget based on current stock, desired consumption and gold available.
 
-It is then pooled together to create a market, prices can be extremely volatile! Usually, trader has a golden window where their need is fulfilled, during which exponential inflation happen. Gold supply then evens out and prices stablize (and trader lose their influence).
+Existing stockpiles don't last forever, as things break and food go bad and gold starts becoming worthless.
 
 ## TODO
 
-Child rearing and inheritance of wealth.
-
-More type:
-
-    Banker
-
-    Bureaucrats
-
-More names:
-    
-    East asian names to come.
-
-Named cities
-
-More reporting, a ranked wealth of cities and individuals.
-
-Potentially create human intervention in form of government types and functions. Thinking of introducing taxman, bandits, and player decision on subsidies in next few iterations.
+Empire pack where wealth cities start organizing senate and soldiers to establish their own country - and rival towns the same.
 
