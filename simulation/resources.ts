@@ -77,9 +77,9 @@ function farmProduction(strength: number, terrain: number, building) : number {
     }
     if (building) {
         if (building.type == "FARM") {
-            terrainModifier *= 1.25;
+            strength *= 1.25;
         } else if (building.type == "ESTATE") {
-            terrainModifier *= 1.5;
+            strength *= 1.5;
         }
     }
     let produce: number;

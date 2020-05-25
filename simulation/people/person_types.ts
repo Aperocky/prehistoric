@@ -29,7 +29,7 @@ const fisher: PersonType = {
     consumption: {
         FOOD : 0.5,
         WOOD : 0.3,
-        TOOL : 0.3,
+        TOOL : 0.4,
     },
     change_func: (person, simulation) => {
         let point = ResourceMap.pointToStr(person.x, person.y);
@@ -76,7 +76,7 @@ const fisher: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/6)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/5)
     },
 }
 
@@ -98,24 +98,24 @@ const hunter: PersonType = {
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
             if (building.type == "TOWN") {
-                if (Math.random() < 0.2) {
-                    return "TRAD";
-                }
-                if (Math.random() < 0.1) {
-                    return "TOOL";
-                }
-            } else if (building.type == "CITY") {
                 if (Math.random() < 0.3) {
                     return "TRAD";
                 }
                 if (Math.random() < 0.2) {
                     return "TOOL";
                 }
-            } else if (building.type == "METRO") {
+            } else if (building.type == "CITY") {
                 if (Math.random() < 0.4) {
                     return "TRAD";
                 }
                 if (Math.random() < 0.3) {
+                    return "TOOL";
+                }
+            } else if (building.type == "METRO") {
+                if (Math.random() < 0.5) {
+                    return "TRAD";
+                }
+                if (Math.random() < 0.4) {
                     return "TOOL";
                 }
             }
@@ -135,13 +135,13 @@ const hunter: PersonType = {
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/6)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/4)
     },
 }
 
 const farmer: PersonType = {
     type: "FARM",
-    travel: 1,
+    travel: 2,
     home: 0,
     work_strength: 1,
     work_radius: 0,
@@ -151,7 +151,7 @@ const farmer: PersonType = {
     },
     consumption: {
         FOOD : 0.4,
-        TOOL : 0.4,
+        TOOL : 0.2,
     },
     change_func: (person, simulation) => {
         // 5% chance to become hunter if not getting enough food
@@ -161,20 +161,20 @@ const farmer: PersonType = {
         let point = ResourceMap.pointToStr(person.x, person.y);
         if (simulation.building_by_location[point]) {
             let building = simulation.building_by_location[point];
-            if (building.type == "TOWN" && Math.random() < 0.05) {
+            if (building.type == "TOWN" && Math.random() < 0.4) {
                 return "TOOL";
             }
-            if (building.type == "CITY" && Math.random() < 0.3) {
+            if (building.type == "CITY" && Math.random() < 0.6) {
                 return "TOOL";
             }
-            if (building.type == "METRO" && Math.random() < 0.5) {
+            if (building.type == "METRO" && Math.random() < 0.8) {
                 return "TOOL";
             }
         }
         return NO_CHANGE;
     },
     replicate_func: (person) => {
-        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/4)
+        return (Math.random()+0.25 < person.store[RESOURCE_TYPE.FOOD]/3)
     },
 }
 
@@ -189,7 +189,6 @@ const trader: PersonType = {
     },
     consumption: {
         FOOD : 0.5,
-        TOOL : 0.1,
     },
     change_func: (person, simulation) => {
         // If hungry, become gatherer instead.
@@ -201,7 +200,7 @@ const trader: PersonType = {
                 return "HUNT";
             }
         } else {
-            if (Math.random() < 0.01) {
+            if (Math.random() < 0.03) {
                 return "HUNT";
             }
         }
@@ -223,7 +222,7 @@ const lumber: PersonType = {
     },
     consumption: {
         FOOD : 0.6,
-        TOOL : 0.2,
+        TOOL : 0.6,
     },
     change_func: (person, simulation) => {
         // Hungry lumberjacks become hunter
@@ -241,12 +240,13 @@ const lumber: PersonType = {
 // In production and draft maps, instead, personal produce will be traded.
 const tooler: PersonType = {
     type: "TOOL",
-    travel: 3,
+    travel: 0,
     home: 0,
     work_strength: 1,
     work_radius: 0,
     draft: {
         GOLD : [0, 1],
+        FOOD : [1.5, 1],
     },
     consumption: {
         FOOD : 0.5,

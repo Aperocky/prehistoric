@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import { ResourceMap } from "../../map/informationMap";
 import { Point } from "../../map/mapUtil";
 import { TYPE_MAP, PersonType } from "./person_types";
-import { STRENGTH_MODIFIERS, RADIUS_MODIFIERS, PRIVATE_ENTEPRISE } from "./modifiers";
+import { STRENGTH_MODIFIERS, RADIUS_MODIFIERS, DRAFT_MODIFIERS, PRIVATE_ENTEPRISE } from "./modifiers";
 import * as lang from "../utilities/langutil";
 
 const MORTALITY = "MORT";
@@ -82,8 +82,8 @@ export class PersonUtil {
             let building = simulation.building_by_location[decision];
             if (decision in simulation.map_cache && simulation.map_cache[decision].geography > 0) {
                 if (building) {
-                    if (building.type == "FARM" && person.type == "HUNT") {
-                        // gatherer may not enter farms.
+                    if (["FARM", "ESTATE"].includes(building.type) && person.type == "HUNT") {
+                        // hunter may not enter farms.
                         continue;
                     }
                 }
@@ -126,6 +126,9 @@ export class PersonUtil {
         // Things go bad!
         for (let rtype of Object.keys(person.store)) {
             person.store[rtype] = person.store[rtype] * 0.9;
+            if (person.store[rtype] < 0.001) {
+                delete person.store[rtype];
+            }
         }
     }
 
@@ -209,8 +212,12 @@ export class PersonUtil {
     static get_draft(person: Person, genealogy) {
         let typedef = PersonUtil.get_type_def(person);
         let draft_radius_mod = 0;
+        let draft_draft_mod = 0;
         if (person.type in RADIUS_MODIFIERS) {
             draft_radius_mod = RADIUS_MODIFIERS[person.type](person);
+        }
+        if (person.type in DRAFT_MODIFIERS) {
+            draft_draft_mod = DRAFT_MODIFIERS[person.type](person);
         }
         let final_draft = JSON.parse(JSON.stringify(typedef.draft));
         for (let key of Object.keys(final_draft)) {
@@ -230,7 +237,7 @@ export class PersonUtil {
             let currmod = (17-curr)*0.03; // Most compensation at young age, reduce to 0 at 17.
             return sum + (currmod > 0 ? currmod : 0);
         }, 0);
-        let total_modifiers = age_modifier + child_modifier;
+        let total_modifiers = age_modifier + child_modifier + draft_draft_mod;
         for (let key of Object.keys(final_draft)) {
             final_draft[key][1] *= total_modifiers;
         }
@@ -322,7 +329,7 @@ export class PersonUtil {
 
     static get_surplus_resources(person: Person) : { [resource: string] : number } {
         let surplus : { [resource: string] : number } = {};
-        // Mark all over 10x of yearly consumption as for sale.
+        // Mark all over 2x of yearly consumption as for sale.
         for (let [rtype, rcount] of Object.entries(person.store)) {
             if (rtype == "GOLD") {
                 continue; // DUH
@@ -332,9 +339,9 @@ export class PersonUtil {
                 rcount -= person.income[rtype];
             }
             if (rtype in PersonUtil.get_consumption(person)) {
-                let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 10;
+                let currplus = rcount - PersonUtil.get_consumption(person)[rtype] * 3;
                 if (currplus > 0) {
-                    surplus[rtype] = currplus; // Portion of store more than 10 years
+                    surplus[rtype] = currplus; // Portion of store more than n years
                 }
             } else {
                 if (rcount > 0) {
@@ -342,7 +349,7 @@ export class PersonUtil {
                 }
             }
         }
-        // Mark all income over 50% yearly need for sale.
+        // Mark all income over 20% yearly need for sale.
         for (let [rtype, rcount] of Object.entries(person.income)) {
             if (rtype == "GOLD") {
                 continue; // DUH
@@ -354,7 +361,7 @@ export class PersonUtil {
             if (rtype in person.family_support["SUPPORT"]) {
                 actual_need += person.family_support["SUPPORT"][rtype];
             }
-            let currplus = rcount - actual_need * 1.5;
+            let currplus = rcount - actual_need * 1.2;
             if (currplus > 0) {
                 lang.add_value(surplus, rtype, currplus);
             }
@@ -413,6 +420,9 @@ export class PersonUtil {
                 consumption += PersonUtil.get_consumption(person)[rtype];
             }
             let spendVal = rcount/(consumption) * 0.5 * credit_line;
+            if (spendVal < 0.001 || credit_line < 0.001) {
+                continue;
+            }
             budget[rtype] = spendVal > credit_line ? credit_line : spendVal;
         }
         return budget;
@@ -508,8 +518,8 @@ const BIRTH_TYPE_MAP = {
     HUNT: "HUNT",
     FARM: "FARM",
     FISH: "FISH",
-    TRAD: "HUNT",
-    WOOD: "HUNT",
+    TRAD: "TRAD",
+    WOOD: "WOOD",
     TOOL: "TOOL",
 }
 

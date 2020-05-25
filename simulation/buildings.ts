@@ -117,9 +117,9 @@ const estate: BuildingType = {
 
 const town: BuildingType = {
     type: "TOWN",
-    maintenance_cost: 10,
+    maintenance_cost: 4,
     run_maintenance: (building: Building, people: Person[]): number => {
-        let new_maintenance = people.length * people.length / 10;
+        let new_maintenance = people.length * people.length / 9;
         return new_maintenance;
     },
     low_thresh: 30,
@@ -128,7 +128,7 @@ const town: BuildingType = {
     upgrade: "CITY",
     downgrade: NIL,
     create_func: (people: Person[]): boolean => {
-        if (people.length > 10) {
+        if (people.length > 6) {
             return true;
         }
         return false;
@@ -171,7 +171,7 @@ const metro: BuildingType = {
 
 const UPGRADE_GUARD_FUNCS = {
     "CITY": (people) => {
-        return people.length > 25;
+        return people.length > 20;
     },
     "METRO": (people) => {
         return people.length > 55;

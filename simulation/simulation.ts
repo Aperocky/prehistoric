@@ -200,7 +200,9 @@ export class Simulation {
             // Refresh event log
             person.eventlog = "";
             // Update experience
-            PersonUtil.update_experience(person);
+            if (person.age > 14) {
+                PersonUtil.update_experience(person);
+            }
             if ("FOOD" in person.deficit) {
                 for (let i = 0; i < PersonUtil.get_travel(person); i++) {
                     PersonUtil.move_person(person, this);
