@@ -1,7 +1,7 @@
 import { TerrainMap, Point } from "../../map/mapUtil";
 import { ResourceMap } from "../../map/informationMap";
 import { Person, PersonUtil } from "../people/person";
-import { Building } from "../buildings";
+import { Building } from "../buildings/buildings";
 import { PRODUCE_MAP, PRODUCE_TYPE } from "../resources";
 
 // Efforts at production

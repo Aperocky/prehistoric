@@ -7,7 +7,8 @@ export type LocalInformation = {
 
 export class ResourceMap {
     boundary: number; // Assume square
-    resourceMap : { [key: string] : { [key: string]: number }} ;
+    resourceMap : { [key: string] : { [key: string]: number }};
+    static radix_memory_cache: { [key: string] : Array<Point> } = {};
 
     constructor(boundary: number) {
         this.resourceMap = {};
@@ -20,16 +21,30 @@ export class ResourceMap {
     }
 
     static get_radius_position(x: number, y: number, radius: number) : Point[] {
-        let result: Point[] = [];
+        // Sanitize input, radius to be put in increment of 0.1
+        radius = Math.floor(radius * 10)/10;
+        let zero_based_result: Point[] = [];
         let fullrad = Math.floor(radius);
-        for (let i = x-fullrad; i <= x+fullrad; i++) {
-            for (let j = y-fullrad; j <= y+fullrad; j++) {
-                let offset_x = i-x;
-                let offset_y = j-y;
-                if (offset_x * offset_x + offset_y * offset_y <= radius * radius) {
-                    result.push({x: i, y: j});
+        if (radius.toString() in ResourceMap.radix_memory_cache) {
+            zero_based_result = ResourceMap.radix_memory_cache[radius.toString()]
+        } else {
+            console.log(`Adding ${radius} to radius cache`);
+            for (let i = -fullrad; i <= fullrad; i++) {
+                for (let j = -fullrad; j <= fullrad; j++) {
+                    if (i * i + j * j <= radius * radius) {
+                        zero_based_result.push({x: i, y: j});
+                    }
                 }
             }
+            ResourceMap.radix_memory_cache[radius.toString()] = zero_based_result;
+        }
+        let result: Point[] = [];
+        for (let point of zero_based_result) {
+            let mod_point = {
+                x: point.x + x,
+                y: point.y + y
+            }
+            result.push(mod_point);
         }
         return result;
     }

@@ -147,7 +147,7 @@ const farmer: PersonType = {
     work_radius: 0,
     draft: {
         FOOD: [0, 10],
-        GOLD: [1.5, 1]
+        GOLD: [1, 1]
     },
     consumption: {
         FOOD : 0.4,

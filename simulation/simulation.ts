@@ -2,8 +2,9 @@ import { TerrainMap, Point } from "../map/mapUtil";
 import { ResourceMap, createMapCache, LocalInformation } from "../map/informationMap";
 import { Person, PersonUtil } from "./people/person";
 import { Genealogy } from "./people/genealogy";
-import { Building, BuildingUtil } from "./buildings";
+import { Building, BuildingUtil } from "./buildings/buildings";
 import { MarketConditions, get_supply_and_demand, do_business } from "./market";
+import { PerfStat } from "./utilities/performance";
 import { v4 as uuid } from 'uuid';
 import * as SimUtil from "./utilities/simutil";
 
@@ -28,6 +29,8 @@ export class Simulation {
     building_by_location : { [key: string] : Building };
     market_conditions: MarketConditions;
 
+    static perfstat: PerfStat = new PerfStat();
+
     generate() {
         this.people = {};
         this.geography = this.getNewTerrainMap();
@@ -51,8 +54,9 @@ export class Simulation {
         this.genealogy = new Genealogy(Object.values(this.people));
     }
 
-    // State update function
+    // MAIN: State update function
     next_round() {
+        Simulation.perfstat.measure_start();
         for (let person of Object.values(this.people)) {
             if (person.type == "MORT") {
                 // RIP
@@ -64,24 +68,30 @@ export class Simulation {
         if (this.year % 10 === 0) {
             this.genealogy.clear_forgotten(this);
         }
+        Simulation.perfstat.measure_block("RIP");
         // Move first, so same people in same place create same contributions/ income
         this.year += 1;
         this.genealogy.turn_num = this.year;
         this.move_people_and_update_experience();
+        Simulation.perfstat.measure_block("MOVE");
         // Map logic (production, distribution on map scale)
         this.effort_map = SimUtil.create_effort_map(Object.values(this.people), FIXED_MAP_SIZE);
         this.production_map = SimUtil.create_production_map(this.effort_map, this.map_cache, this.building_by_location, FIXED_MAP_SIZE);
         this.draft_map = SimUtil.create_draft_map(Object.values(this.people), this, FIXED_MAP_SIZE);
+        Simulation.perfstat.measure_block("MAP");
         // The means of production
         this.income_by_people = this.harvest();
+        Simulation.perfstat.measure_block("HARVEST");
         this.distribute();
         this.market_conditions = get_supply_and_demand(Object.values(this.people), this);
         do_business(Object.values(this.people), this.market_conditions);
+        Simulation.perfstat.measure_block("MARKET");
         // Life
         this.commence_life();
         this.people_by_location = this.get_people_for_show();
         // Building logic
         this.add_and_run_buildings();
+        Simulation.perfstat.measure_block("BUILDING");
     }
 
     getNewTerrainMap() : number[][] {

@@ -398,6 +398,7 @@ function runContainer(): void {
         mapContainer.addChild(sp);
     }
     runDisplay();
+    Simulation.perfstat.measure_end("DRAW", simulation);
 }
 
 export function linkFamily(person_id): void {

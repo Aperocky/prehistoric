@@ -2,7 +2,7 @@ import { StatisticsReport } from "../simulation/utilities/simutil";
 import { Person, PersonUtil, DISPLAY_TYPE } from "../simulation/people/person";
 import { Genealogy, Record } from "../simulation/people/genealogy";
 import { PRODUCE_TYPE } from "../simulation/resources";
-import { Building } from "../simulation/buildings";
+import { Building } from "../simulation/buildings/buildings";
 import { MarketConditions } from "../simulation/market";
 import { linkFamily } from "../render";
 import * as lang from "../simulation/utilities/langutil";
