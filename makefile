@@ -1,5 +1,5 @@
 build:
-	@tsc render.ts --resolveJsonModule --target es5
+	@tsc render.ts --resolveJsonModule --target es2017
 	@browserify render.js -o script.js
 	@uglifyjs script.js > script.min.js
 

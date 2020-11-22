@@ -39,3 +39,11 @@ Existing stockpiles don't last forever, as things break and food go bad and gold
 
 Empire pack where wealth cities start organizing senate and soldiers to establish their own country - and rival towns the same.
 
+
+## Deprecation
+
+The code got messy and I had less spare time, but I plan to give this project another go since the holiday seasons are rolling around. 
+
+However the structure was not well designed to begin with. The project got increasingly harder to work with on such basis so I'm deciding to restart the project on a similar structure to `hydro-sim`. Where things are more extensible and better defined. I had a lot of fun writing this and I'm looking forward to add the Empire feature to the build.
+
+One more thing, `hydro-sim` worked fine on the new ARM64 mac but this project had trouble building. One more reason to start it anew.
